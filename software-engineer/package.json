@@ -1,0 +1,21 @@
+{
+  "name": "harness-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "harness": "bin/harness.mjs"
+  },
+  "scripts": {
+    "test": "node --test",
+    "harness": "node bin/harness.mjs",
+    "setup": "bash install.sh"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@toon-format/toon": "^4.1.1"
+  },
+  "packageManager": "pnpm@10.26.2"
+}
