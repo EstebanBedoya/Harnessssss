@@ -14,6 +14,43 @@ Orquestador determinista (sin LLM) para trabajar con agentes de código: guarda 
 
 El gate lo corre el script; ningún agente marca una tarea como `done`.
 
+## Cómo se comportan los agentes
+
+Ciclo de vida de una tarea (`harness next <id>` devuelve el siguiente paso según el estado):
+
+```mermaid
+flowchart TD
+    U([Usuario]) -->|/planner pide algo| P[Planner · Claude Opus<br/>categoriza, spec y plan]
+    P -->|task add| PR[proposed]
+    PR -->|el usuario aprueba| AP[approved]
+
+    AP -->|tarea con UI| D[Designer · Codex + Pencil<br/>fase spec]
+    D --> EX
+    AP -->|sin UI| EX[Executor · Codex<br/>escribe código en su scope]
+
+    EX -->|exec_done| G{{Gate · script<br/>corre gate.cmd}}
+    G -->|falla| RT{¿quedan<br/>reintentos?}
+    G -->|pasa| UI{¿tarea con UI?}
+
+    UI -->|sí| V[Verificación visual · Claude QA]
+    UI -->|no| R
+    V --> R[Reviewer · Claude Sonnet<br/>QA del diff]
+
+    R -->|aprobado| DONE([done · el script lo marca])
+    R -->|rechazado| RT
+    RT -->|sí, +1 nivel de esfuerzo| EX
+    RT -->|no| B([blocked · decide un humano])
+
+    DONE --> PUSH[Usuario hace push y PR]
+
+    X[Explore · Codex<br/>solo lectura] -.->|consulta suelta, fuera del flujo| P
+```
+
+Quién decide qué:
+- **El script** (`harness`) manda: calcula el siguiente paso, el modelo y el esfuerzo, corre el gate y marca `done`. Los agentes no se auto-aprueban.
+- **El planner** solo planifica y lanza lo que `harness next` indica; no escribe código ni reemplaza a un agente caído.
+- **Si Codex falla**, el script reintenta una vez con más esfuerzo y luego pasa la tarea a `blocked`. Cambiar el executor a Claude es una decisión humana.
+
 ## Requisitos
 - node ≥ 20 y pnpm (`brew install pnpm`)
 - Claude Code
