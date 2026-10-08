@@ -1,0 +1,261 @@
+<!--
+  Plantilla de reporte de implementación del planner (paso 8 de agents/planner.md).
+  Ejemplo real: tarea freeze-admin-free-range de gym-app (2026-10-05). Copiar, reemplazar el contenido
+  con hechos de la tarea (diff --stat exacto, history del backlog, veredictos en Engram) y conservar:
+  tokens claro/oscuro, secciones (estado, antes/después, reglas, hallazgos del review, línea de tiempo,
+  archivos, pantallazos, pendientes, publicar). Cada {{SHOT:nombre}} se reemplaza por
+  data:image/webp;base64,... del archivo scratchpad/shots/nombre.webp antes de publicar.
+  Script de captura de referencia: gym-app/.harness/reports/freeze-admin-free-range.shots.mjs
+-->
+<title>Congelamiento libre del admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@400;600&display=swap">
+<style>
+/* Layout: informe de entrega en una columna, con ficha de estado arriba y bloques por tema */
+:root{
+  --bg:#f5f7f8; --surface:#ffffff; --fg:#14202a; --muted:#5b6b78; --line:#d9e1e6;
+  --accent:#1f6f8b; --accent-soft:#e3f0f5;
+  --ok:#2f7d4f; --ok-soft:#e5f3ea; --warn:#a2610f; --warn-soft:#fbf0de; --bad:#b0362f; --bad-soft:#f9e4e2;
+  --f-display:"Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f161c; --surface:#16212a; --fg:#e4ecf1; --muted:#93a4b1; --line:#2a3945;
+  --accent:#6bb8d4; --accent-soft:#17323e;
+  --ok:#6cc48f; --ok-soft:#173225; --warn:#e3a85a; --warn-soft:#3a2a12; --bad:#ec8a82; --bad-soft:#3d1c1a;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f161c; --surface:#16212a; --fg:#e4ecf1; --muted:#93a4b1; --line:#2a3945;
+  --accent:#6bb8d4; --accent-soft:#17323e;
+  --ok:#6cc48f; --ok-soft:#173225; --warn:#e3a85a; --warn-soft:#3a2a12; --bad:#ec8a82; --bad-soft:#3d1c1a;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.55}
+.wrap{max-width:880px;margin:0 auto;padding-inline:20px;padding-block:40px 64px;display:flex;flex-direction:column;gap:36px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(28px,5vw,40px);font-weight:800;letter-spacing:-.01em}
+h2{font-size:21px;font-weight:700;margin-bottom:14px}
+h3{font-size:16px;font-weight:600}
+p{margin:0;max-width:68ch}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+code,.mono{font-family:var(--f-mono);font-size:.88em}
+code{background:var(--accent-soft);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+header{display:flex;flex-direction:column;gap:12px}
+.lede{font-size:18px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:var(--f-mono);font-size:12.5px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface)}
+.chip.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent;font-weight:500}
+.status{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.status div{background:var(--surface);padding:14px 16px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.status b{font-family:var(--f-display);font-size:22px;font-variant-numeric:tabular-nums}
+.status span{font-size:13px;color:var(--muted)}
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ba section{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.ba ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.tag{align-self:flex-start;font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:4px}
+.tag.before{background:var(--bad-soft);color:var(--bad)}
+.tag.after{background:var(--ok-soft);color:var(--ok)}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.rule{border-top:3px solid var(--accent);background:var(--surface);padding:14px 16px;border-radius:0 0 8px 8px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.rule p{font-size:15px;color:var(--muted)}
+.field{font-family:var(--f-mono);font-size:13px;color:var(--accent);font-weight:500}
+.timeline{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.timeline li{display:grid;grid-template-columns:64px 14px 1fr;gap:12px;padding-bottom:16px;position:relative}
+.timeline li::before{content:"";position:absolute;left:82px;top:16px;bottom:0;width:2px;background:var(--line)}
+.timeline li:last-child::before{display:none}
+.t{font-family:var(--f-mono);font-size:12.5px;color:var(--muted);padding-top:2px;font-variant-numeric:tabular-nums}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--accent);margin-top:6px;z-index:1}
+.dot.bad{background:var(--bad)} .dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)}
+.timeline .who{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.timeline p{font-size:15px}
+.example{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14.5px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-family:var(--f-mono);font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+td.bad{color:var(--bad);font-weight:600} td.ok{color:var(--ok);font-weight:600}
+.files td:first-child{font-family:var(--f-mono);font-size:13px;white-space:normal;overflow-wrap:anywhere}
+.files td.n{text-align:right;font-family:var(--f-mono);font-size:13px}
+.add{color:var(--ok)} .del{color:var(--bad)}
+.pending{display:flex;flex-direction:column;gap:10px}
+.pend{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.pend .tag{margin-top:2px}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+.tag.info{background:var(--accent-soft);color:var(--accent)}
+.cmd{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow-x:auto}
+.cmd pre{margin:0;font-family:var(--f-mono);font-size:13px;line-height:1.7}
+.copy{position:absolute;top:8px;right:8px;font-family:var(--f-mono);font-size:12px;padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+.copy:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:20px}
+.shot{margin:0;display:flex;flex-direction:column;gap:8px;min-width:0}
+.shot img{width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.shot.mobile img{max-width:300px}
+.shot figcaption{font-size:14.5px;color:var(--muted)}
+.shot figcaption b{color:var(--fg);font-weight:600}
+.note{font-size:14px;color:var(--muted)}
+footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+@media (max-width:640px){.ba{grid-template-columns:1fr}.timeline li{grid-template-columns:52px 14px 1fr}.timeline li::before{left:70px}}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">gym-app · reporte de implementación · 5 oct 2026</span>
+    <h1>Congelamiento de membresías sin tope por plan</h1>
+    <p class="lede">El administrador decide el lapso del congelamiento. Ya no hay un límite de días quemado en cada plan.</p>
+    <div class="chips">
+      <span class="chip ok">Aprobado por review</span>
+      <span class="chip">fix · T1 · UI</span>
+      <span class="chip">fix/freeze-admin-free-range → develop</span>
+      <span class="chip">Pendiente: push y PR</span>
+    </div>
+  </header>
+
+  <div class="status" aria-label="Resumen en cifras">
+    <div><b>5</b><span>commits en la rama</span></div>
+    <div><b>2559</b><span>tests en verde (218 suites)</span></div>
+    <div><b>15</b><span>archivos de código y docs</span></div>
+    <div><b>1</b><span>bug encontrado y corregido en review</span></div>
+  </div>
+
+  <section>
+    <h2>Qué cambió</h2>
+    <div class="ba">
+      <section>
+        <span class="tag before">Antes</span>
+        <ul>
+          <li>Cada plan tenía <code>freezeLimitDays</code>, con valor 0 por defecto. Un plan creado sin tocar el campo no se podía congelar nunca.</li>
+          <li>Pasar el tope devolvía un 422 "Límite de congelamiento alcanzado".</li>
+          <li>No se validaba el orden de las fechas. Un "hasta" anterior al "desde" acortaba la membresía.</li>
+          <li>La ficha mostraba "Congelamiento usado X/Y días".</li>
+        </ul>
+      </section>
+      <section>
+        <span class="tag after">Ahora</span>
+        <ul>
+          <li>Sin tope por plan: el administrador elige desde y hasta.</li>
+          <li>Rango inválido o fechas ilegibles devuelven 400 antes de escribir nada.</li>
+          <li>Se permite congelar retroactivamente dentro de la membresía vigente.</li>
+          <li>La ficha muestra "Días congelados acumulados: N", solo como dato.</li>
+          <li>El campo del límite desaparece del formulario y la tabla de planes.</li>
+        </ul>
+      </section>
+    </div>
+  </section>
+
+  <section>
+    <h2>Reglas que quedaron</h2>
+    <div class="rules">
+      <div class="rule"><span class="field">Quién</span><h3>Solo administrador</h3><p>Congelar y descongelar siguen restringidos a ADMIN en el middleware (ADR-132). Esto ya existía; no se tocó.</p></div>
+      <div class="rule"><span class="field">Desde</span><h3>Por defecto, hoy</h3><p>Se puede mover hacia atrás hasta el inicio de la membresía vigente. Nunca a una fecha futura. Hora de Bogotá.</p></div>
+      <div class="rule"><span class="field">Hasta</span><h3>Sin máximo</h3><p>Debe ser posterior a Desde. Si no, el formulario lo marca y el botón queda deshabilitado.</p></div>
+      <div class="rule"><span class="field">Estado</span><h3>Solo membresías en vigor</h3><p>Una membresía ACTIVE pero ya vencida no se puede congelar, igual que antes.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>El bug que encontró la revisión</h2>
+    <div class="example">
+      <p>Permitir fechas pasadas destapó un error al descongelar: se contaban días reales desde "Desde" hasta hoy, sin importar que el rango pedido ya hubiera terminado. El vencimiento se alargaba con días que nadie pidió.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Caso</th><th>Días pedidos</th><th>Antes del arreglo</th><th>Ahora</th></tr></thead>
+          <tbody>
+            <tr><td>Congela 1 jun → 10 jun, descongela el 5 jul</td><td>9</td><td class="bad">+34 días al vencimiento</td><td class="ok">+9 días</td></tr>
+            <tr><td>Congela 1 jun → 15 jul, descongela el 5 jul</td><td>44</td><td>+34 días</td><td class="ok">+34 días</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Los días efectivos ahora quedan acotados al rango pedido. Los dos casos están como escenarios en la spec 05 y como tests del caso de uso.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Cómo se construyó</h2>
+    <ol class="timeline">
+      <li><span class="t">22:09</span><span class="dot"></span><div><span class="who">planner · Claude</span><p>Plan, alcance y registro de la tarea. Decisión: no borrar la columna ahora para no volverla T2. Deuda anotada en Engram.</p></div></li>
+      <li><span class="t">22:20</span><span class="dot warn"></span><div><span class="who">designer · Codex</span><p>Primer intento bloqueado: el harness buscaba la app "Pencil.app", que hoy se llama Pen.app, y no había documento abierto. Se corrigió la detección y se creó el archivo.</p></div></li>
+      <li><span class="t">22:41</span><span class="dot"></span><div><span class="who">designer · Codex</span><p>8 pantallas en <code>design/freeze-admin-free-range.pen</code>. Aprobadas por el usuario.</p></div></li>
+      <li><span class="t">22:59</span><span class="dot"></span><div><span class="who">executor · Codex</span><p>Caso de uso, API, interfaz y docs en 3 commits. El primer intento murió por timeout del harness; el segundo terminó con <code>--keep</code>.</p></div></li>
+      <li><span class="t">23:07</span><span class="dot ok"></span><div><span class="who">reviewer · Claude Sonnet</span><p>Revisión visual en la app real: aprobada.</p></div></li>
+      <li><span class="t">23:09</span><span class="dot bad"></span><div><span class="who">reviewer · Claude Sonnet</span><p>Revisión de código: rechazada por el bug de descongelar retroactivo.</p></div></li>
+      <li><span class="t">23:12</span><span class="dot"></span><div><span class="who">executor · Codex</span><p>Corrección con TDD y escenario en la spec.</p></div></li>
+      <li><span class="t">23:14</span><span class="dot ok"></span><div><span class="who">reviewer · Claude Sonnet</span><p>Aprobada. Gate en verde.</p></div></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Archivos</h2>
+    <div class="tablewrap">
+      <table class="files">
+        <thead><tr><th>Archivo</th><th>Líneas cambiadas</th></tr></thead>
+        <tbody>
+          <tr><td>application/membership/FreezeMembershipUseCase.ts</td><td class="n">33</td></tr>
+          <tr><td>application/membership/FreezeMembershipUseCase.spec.ts</td><td class="n">292</td></tr>
+          <tr><td>application/membership/UnfreezeMembershipUseCase.ts</td><td class="n">8</td></tr>
+          <tr><td>application/membership/UnfreezeMembershipUseCase.spec.ts</td><td class="n">123</td></tr>
+          <tr><td>domain/membership/errors.ts</td><td class="n">6</td></tr>
+          <tr><td>app/api/memberships/[id]/freeze/route.ts</td><td class="n">18</td></tr>
+          <tr><td>components/organisms/MembershipPanel.tsx</td><td class="n">48</td></tr>
+          <tr><td>components/organisms/PlanForm.tsx · PlansTable.tsx</td><td class="n">12</td></tr>
+          <tr><td>staff/members/[id]/page.tsx · members.queries.ts</td><td class="n">17</td></tr>
+          <tr><td>Docs/specs/04 y 05 · DECISIONS.md (ADR-190) · AI_USAGE.md</td><td class="n">134</td></tr>
+          <tr><td>design/freeze-admin-free-range.pen</td><td class="n">diseño</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Pantallazos</h2>
+    <p class="note" style="margin-bottom:16px">App real en esta rama, con datos demo sembrados en una base desechable. Las capturas las tomó un script de Playwright con el viewport fijo, y cada una espera una comprobación que puede fallar.</p>
+    <div class="shots">
+      <figure class="shot"><img src="{{SHOT:01-ficha-activo-congelar}}" alt="Ficha de un socio activo: Muestra «Días congelados acumulados» en lugar del antiguo X/Y, y el botón Congelar." loading="lazy"><figcaption><b>Ficha de un socio activo.</b> Muestra «Días congelados acumulados» en lugar del antiguo X/Y, y el botón Congelar.</figcaption></figure>
+      <figure class="shot"><img src="{{SHOT:02-formulario-desde-hoy}}" alt="Formulario recién abierto: Desde ya trae la fecha de hoy. Confirmar sigue deshabilitado hasta elegir Hasta." loading="lazy"><figcaption><b>Formulario recién abierto.</b> Desde ya trae la fecha de hoy. Confirmar sigue deshabilitado hasta elegir Hasta.</figcaption></figure>
+      <figure class="shot"><img src="{{SHOT:03-rango-invalido-error-inline}}" alt="Rango inválido: Hasta igual a Desde: aparece el error en línea y el botón no se puede usar." loading="lazy"><figcaption><b>Rango inválido.</b> Hasta igual a Desde: aparece el error en línea y el botón no se puede usar.</figcaption></figure>
+      <figure class="shot"><img src="{{SHOT:04-rango-valido-boton-habilitado}}" alt="Rango válido: Con Hasta posterior a Desde, el botón se habilita." loading="lazy"><figcaption><b>Rango válido.</b> Con Hasta posterior a Desde, el botón se habilita.</figcaption></figure>
+      <figure class="shot"><img src="{{SHOT:09-exito-congelado}}" alt="Después de congelar: Congelado 14 días: el vencimiento pasó de 26/10 a 09/11 y el acumulado lo trae el servidor." loading="lazy"><figcaption><b>Después de congelar.</b> Congelado 14 días: el vencimiento pasó de 26/10 a 09/11 y el acumulado lo trae el servidor.</figcaption></figure>
+      <figure class="shot"><img src="{{SHOT:05-ficha-congelado-descongelar}}" alt="Socio ya congelado: «Congelada hasta» y el botón Descongelar." loading="lazy"><figcaption><b>Socio ya congelado.</b> «Congelada hasta» y el botón Descongelar.</figcaption></figure>
+      <figure class="shot"><img src="{{SHOT:06a-plan-crear-sin-congelamiento}}" alt="Crear plan: El formulario ya no pide días de congelamiento." loading="lazy"><figcaption><b>Crear plan.</b> El formulario ya no pide días de congelamiento.</figcaption></figure>
+      <figure class="shot"><img src="{{SHOT:06b-plan-editar-sin-congelamiento}}" alt="Editar plan: Tampoco aparece al editar un plan existente." loading="lazy"><figcaption><b>Editar plan.</b> Tampoco aparece al editar un plan existente.</figcaption></figure>
+      <figure class="shot"><img src="{{SHOT:07-tabla-planes-sin-columna}}" alt="Tabla de planes: Sin la columna del límite." loading="lazy"><figcaption><b>Tabla de planes.</b> Sin la columna del límite.</figcaption></figure>
+      <figure class="shot mobile"><img src="{{SHOT:08-mobile-390-formulario-congelar}}" alt="Celular, 390 px: El formulario cabe sin scroll horizontal." loading="lazy"><figcaption><b>Celular, 390 px.</b> El formulario cabe sin scroll horizontal.</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Pendientes</h2>
+    <div class="pending">
+      <div class="pend"><span class="tag warn">Tú</span><p>Hacer push y abrir el PR contra <code>develop</code>. Comandos abajo.</p></div>
+      <div class="pend"><span class="tag warn">Sin probar</span><p>El congelamiento exitoso y el ancho de 390 px ya están en los pantallazos. Siguen sin verse el estado "Congelando…" y el mensaje de error del servidor.</p></div>
+      <div class="pend"><span class="tag info">Deuda</span><p>La columna <code>freezeLimitDays</code> queda en la base sin uso. Se borra en la próxima migración de Prisma (anotado en Engram).</p></div>
+      <div class="pend"><span class="tag info">Otro repo</span><p>Arreglo de una línea sin commitear en <code>ia-tools</code>: la detección de la app de diseño ahora acepta Pen.app.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Publicar</h2>
+    <div class="cmd">
+      <button class="copy" id="copy-cmd" type="button">Copiar</button>
+      <pre id="cmd-text">git push -u origin fix/freeze-admin-free-range
+gh pr create --base develop --head fix/freeze-admin-free-range \
+  --title "fix(membership): congelamiento sin tope por plan, el admin elige el lapso"</pre>
+    </div>
+  </section>
+
+  <footer>Fuentes: diff <span class="mono">develop..fix/freeze-admin-free-range</span>, gate del harness y veredictos del reviewer guardados en Engram (<span class="mono">harness/freeze-admin-free-range/*</span>).</footer>
+</div>
+
+<script>
+document.getElementById("copy-cmd").addEventListener("click", function () {
+  var btn = this, text = document.getElementById("cmd-text").textContent;
+  function done(msg){ btn.textContent = msg; setTimeout(function(){ btn.textContent = "Copiar"; }, 1600); }
+  try {
+    navigator.clipboard.writeText(text).then(function(){ done("Copiado"); }, function(){ select(); });
+  } catch (e) { select(); }
+  function select(){
+    var r = document.createRange(); r.selectNodeContents(document.getElementById("cmd-text"));
+    var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); done("Seleccionado");
+  }
+});
+</script>
