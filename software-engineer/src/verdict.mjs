@@ -13,7 +13,8 @@ export function judgeRun({ role, reply, changed }) {
 }
 
 // El MCP de Pencil habla con la APP de escritorio; sin ella cada llamada falla ("WebSocket not connected").
+// La app se renombró a Pen.app (pen.dev); se aceptan ambos nombres.
 // Los servidores MCP sueltos (`mcp-server-darwin-arm64`) no cuentan: solo el ejecutable de la app.
 export function pencilAppRunning(listProcesses = () => spawnSync('ps', ['-axo', 'command'], { encoding: 'utf8' }).stdout || '') {
-  return listProcesses().split('\n').some((l) => /Pencil\.app\/Contents\/MacOS\//.test(l));
+  return listProcesses().split('\n').some((l) => /\/(Pencil|Pen)\.app\/Contents\/MacOS\//.test(l));
 }
