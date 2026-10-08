@@ -17,7 +17,7 @@ metadata:
 /harness init --sdd open|all|none   which previous SDD history to copy in Engram (default: all)
 ```
 
-The CLI is `node ~/Projects/custom-skills/harness/core/bin/harness.mjs` (call it `H`). Detection is done by that script, never by reading the repo yourself: you interpret its summary. Design and decisions: `~/Projects/custom-skills/harness/harness-notes.md` (§5, §16).
+The CLI is `node ~/Projects/ia-tools/harnesses/software-engineer/bin/harness.mjs` (call it `H`). Detection is done by that script, never by reading the repo yourself: you interpret its summary. Design and decisions: `~/Projects/ia-tools/private/harness-notes.md` (§5, §16).
 
 ## Steps (`/harness init`)
 
