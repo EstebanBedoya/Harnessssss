@@ -147,7 +147,7 @@ const MCP_BY_SIGNAL = {
 };
 export function recommend(root, d, home = homedir()) {
   const skillExists = (n) => has(root, `.claude/skills/${n}`) || existsSync(join(home, '.claude', 'skills', n));
-  const core = ['commit-work', 'release-pr'].filter(skillExists);
+  const core = ['commit-work', 'release-pr', 'dockploy-admin-server'].filter(skillExists);
   const project = [...new Set(d.stack.frameworks.flatMap((f) => SKILL_BY_FRAMEWORK[f] || []))].filter(skillExists);
   const seen = new Set();
   const mcps = d.stack.frameworks.filter((f) => MCP_BY_SIGNAL[f]).map((f) => ({ because: `${f} detected`, ...MCP_BY_SIGNAL[f] }))
@@ -185,6 +185,8 @@ export function assignSkills(skills, { ui = false } = {}) {
     executor: [...stack, ...design.filter((n) => /shadcn|radix|tailwind/i.test(n)), ...(skills.core || []).filter((n) => n === 'commit-work')],
     reviewer: [...stack.filter((n) => /best-practices/.test(n)), ...design.filter((n) => /accessib|seo/i.test(n))],
     designer: ui ? design : [],
+    deploy: (skills.core || []).filter((n) => n === 'dockploy-admin-server'),
+    comercial: [],
     explore: [],
   };
   const used = new Set(Object.values(assigned).flat());

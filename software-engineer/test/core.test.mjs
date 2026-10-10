@@ -235,11 +235,11 @@ test('init: AGENTS.md y CLAUDE.md existentes no se pisan; la propuesta queda apa
   assert.ok(!existsSync(join(root2, 'AGENTS.md')));
 });
 
-test('init: instala los 5 agentes, es idempotente y no pisa archivos distintos', () => {
+test('init: instala los 7 agentes, es idempotente y no pisa archivos distintos', () => {
   const root = tmp();
   const a = installAgents(root);
-  assert.deepEqual(a.installed.sort(), ['designer.md', 'executor.md', 'explore.md', 'planner.md', 'reviewer.md']);
-  assert.equal(installAgents(root).unchanged.length, 5);
+  assert.deepEqual(a.installed.sort(), ['comercial.md', 'deploy.md', 'designer.md', 'executor.md', 'explore.md', 'planner.md', 'reviewer.md']);
+  assert.equal(installAgents(root).unchanged.length, 7);
   writeFileSync(join(root, '.claude/agents/planner.md'), 'editado a mano');
   const b = installAgents(root);
   assert.deepEqual(b.skipped, ['planner.md']);
@@ -387,9 +387,9 @@ test('agentes: plantilla pura se renderiza, el bloque se refresca y lo editado a
   const root = tmp(); const p = prof(); p.agents = Object.fromEntries(Object.entries(assignSkills(p.skills, { ui: true }).assigned).map(([r, skills]) => [r, { skills }]));
   installAgents(root); // copia pura, como la v0.1 (lo que ya quedó instalado en proyectos)
   const r1 = installAgents(root, { profile: p, name: 'demo' });
-  assert.equal(r1.refreshed.length, 5);
+  assert.equal(r1.refreshed.length, 7);
   assert.match(readFileSync(join(root, '.claude/agents/executor.md'), 'utf8'), /## Project: demo/);
-  assert.equal(installAgents(root, { profile: p, name: 'demo' }).unchanged.length, 5); // idempotente
+  assert.equal(installAgents(root, { profile: p, name: 'demo' }).unchanged.length, 7); // idempotente
 
   const f = join(root, '.claude/agents/executor.md');
   writeFileSync(f, `LÍNEA MÍA\n${readFileSync(f, 'utf8')}`);

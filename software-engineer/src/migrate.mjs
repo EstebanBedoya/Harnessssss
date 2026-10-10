@@ -7,7 +7,7 @@ import { basename, join } from 'node:path';
 // Detección y migración de harnesses anteriores (16.2). Nunca borra ni mueve: adopta, registra, adapta o copia.
 
 const first = (root, cands) => cands.find((c) => existsSync(join(root, c)));
-const NEW_AGENTS = ['planner.md', 'executor.md', 'reviewer.md', 'explore.md', 'designer.md'];
+const NEW_AGENTS = ['planner.md', 'executor.md', 'reviewer.md', 'explore.md', 'designer.md', 'comercial.md', 'deploy.md'];
 
 // Títulos de un markdown con su línea: punteros para el AGENTS.md (el detalle se lee bajo demanda).
 export function headings(file, max = 14) {
