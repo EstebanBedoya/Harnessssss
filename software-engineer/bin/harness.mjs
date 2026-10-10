@@ -19,6 +19,9 @@ import { route } from '../src/router.mjs';
 import { dirs, getProfileValue, loadBacklog, loadProfile, setProfileValue, writeJson } from '../src/store.mjs';
 import { addTask, applyEvent, nextStep } from '../src/tasks.mjs';
 import { readRows } from '../src/toonfile.mjs';
+import { exploreReuse, reuseCheck } from '../src/reuse.mjs';
+import { reindex } from '../src/graph.mjs';
+import { encode } from '@toon-format/toon';
 
 // Parser mínimo: positionals + --flag valor / --flag.
 const argv = process.argv.slice(2);
@@ -178,23 +181,46 @@ try {
       process.exitCode = r.pass ? 0 : 1;
       break;
     }
+    case 'explore': {
+      // El sistema de búsqueda del harness: antes de escribir código, ¿ya existe algo que reutilizar? Sobre el grafo; con --deep, Haiku decide.
+      // Cualquier agente (Codex o Claude) lo llama como comando local. `--reuse` se acepta como alias. `--for <rol>` se acepta e ignora.
+      // El parser genérico haría que `--deep texto` se coma la primera palabra: aquí se reconstruye la intención desde argv.
+      const BOOL = new Set(['deep', 'fresh', 'json', 'reindex']); const WITH_VALUE = new Set(['for', 'root']);
+      const words = [];
+      for (let i = argv.indexOf('explore') + 1; i < argv.length; i++) {
+        const k = argv[i].startsWith('--') ? argv[i].slice(2) : '';
+        if (!k) words.push(argv[i]);
+        else if (k === 'reuse') { if (argv[i + 1] && !argv[i + 1].startsWith('--')) words.push(argv[++i]); }
+        else if (WITH_VALUE.has(k)) i++;
+        else if (BOOL.has(k)) flag[k] = true;
+      }
+      if (flag.reindex) { const r = reindex(root); if (!r) fail('no pude indexar: ¿está instalado codebase-memory-mcp?'); out(r); break; }
+      const intent = words.filter(Boolean).join(' ').trim();
+      if (!intent) fail('uso: explore "<qué vas a escribir>" [--deep] [--fresh] [--json] | explore --reindex');
+      const res = exploreReuse(root, intent, { deep: !!flag.deep, fresh: !!flag.fresh });
+      if (flag.json) out(res); else console.log(encode(res));
+      break;
+    }
+    case 'reuse-check': {
+      // ¿Lo que el diff escribió duplica algo que ya existía? Para el reviewer y para el executor antes de cerrar. Base: la de la tarea, --base o HEAD.
+      const base = sub && loadBacklog(root).tasks[sub] ? loadBacklog(root).tasks[sub].base : typeof flag.base === 'string' ? flag.base : 'HEAD';
+      const res = reuseCheck(root, { base });
+      if (flag.json) out(res); else console.log(encode(res));
+      // --strict: un `duplicate` (similitud ≥ 0.6) sale con código 1, para que el agente o el gate no puedan ignorarlo
+      if (flag.strict && res.findings.some((f) => f.verdict === 'duplicate')) process.exitCode = 1;
+      break;
+    }
     case 'exec': {
-      // Lanza a un agente en Codex por Herdr: executor, designer (Pencil) o explore (solo lectura). El prompt lleva referencias, no contenido (7.13).
+      // Lanza a un agente en Codex por Herdr: executor o designer (Pencil). La exploración ya no pasa por aquí: `harness explore`. El prompt lleva referencias, no contenido (7.13).
       const role = flag.role || 'executor';
-      if (!['executor', 'designer', 'explore'].includes(role)) fail(`--role debe ser executor, designer o explore (recibí ${role})`);
+      if (role === 'explore') fail('explore ya no se lanza por Herdr: cualquier agente lo llama como comando local, `harness explore "<pregunta>"`');
+      if (!['executor', 'designer'].includes(role)) fail(`--role debe ser executor o designer (recibí ${role})`);
       const profile = loadProfile(root);
       const t = need(sub);
       let rt; let refs;
-      if (role === 'explore') {
-        if (!flag.instruction) fail('explore necesita --instruction con la pregunta');
-        rt = route(profile, 'explore', { tier: t.tier, available: list(flag.available) });
-        if (rt.wait || rt.error) fail(rt.reason || rt.error);
-        refs = { plan: `harness/${t.id}/plan`, design: `harness/${t.id}/design` };
-      } else {
-        const step = nextStep(profile, t, { available: list(flag.available) });
-        if (step.action !== 'run' || step.role !== role || (role === 'designer' && step.phase !== 'spec')) fail(`el siguiente paso no es ${role}: ${JSON.stringify(step)}`);
-        rt = step.route; refs = step.refs;
-      }
+      const step = nextStep(profile, t, { available: list(flag.available) });
+      if (step.action !== 'run' || step.role !== role || (role === 'designer' && step.phase !== 'spec')) fail(`el siguiente paso no es ${role}: ${JSON.stringify(step)}`);
+      rt = step.route; refs = step.refs;
       if (rt.provider !== 'codex') {
         fail(role === 'designer' ? `el designer está configurado en ${rt.provider}, no en Codex (cámbialo con: harness config set models.designer.use codex)` : `este comando solo lanza Codex; la ruta eligió ${rt.provider}`);
       }
@@ -220,7 +246,6 @@ try {
           `Design with the Pencil MCP and save the file as design/${t.id}.pen. Write only design/** files: do not touch code.`,
           flag.instruction ? `Instruction: ${flag.instruction}` : '', ...contract,
         ],
-        explore: [`Read-only: do not modify anything and do not write any file. Question: ${flag.instruction}`, 'Give the answer as your final message: it starts with DONE, at most 30 lines, with path:line references.'],
       }[role];
       const text = [...head, ...body].filter(Boolean).join('\n');
       const name = `${role === 'executor' ? 'exec' : role}-${t.id}`.slice(0, 31).toLowerCase().replace(/[^a-z0-9_-]/g, '-');
@@ -228,7 +253,7 @@ try {
       const pixel = ensureBridge(root, fileURLToPath(import.meta.url));
       const pane = herdr.splitPane(root);
       try {
-        herdr.startAgent(name, 'codex', pane, herdr.codexArgs(profile, rt, t.tier, { sandbox: role === 'explore' ? 'read-only' : undefined }));
+        herdr.startAgent(name, 'codex', pane, herdr.codexArgs(profile, rt, t.tier, {}));
         const { hooksDismissed } = herdr.waitCodexReady(name);
         if (role === 'executor') applyEvent(root, profile, t.id, 'exec_started', { provider: 'codex' });
         herdr.prompt(name, text, Number(flag.timeout || 300000));
@@ -242,7 +267,7 @@ try {
         // Su respuesta final queda en la sesión de Codex aunque no pueda escribir archivos (explore va de solo lectura).
         const finalMsg = codexSession ? finalAgentMessage(codexSession) : '';
         const answer = fileReply || finalMsg;
-        const reply = answer ? answer.slice(0, role === 'explore' ? 6000 : 600) : '(sin respuesta)';
+        const reply = answer ? answer.slice(0, 600) : '(sin respuesta)';
         const state = herdr.agentGet(name).result?.agent?.agent_status ?? 'unknown';
         const changed = role === 'executor' ? checkScope(root, t).files?.length > 0
           : role === 'designer' ? (changedFiles(root, t.base) || []).some((f) => f.startsWith('design/')) : false;
@@ -313,7 +338,10 @@ try {
   next <id> [--available claude,codex]   siguiente paso (lo consulta el planner)
   route <rol> --tier T1 --attempt 0 --executor codex|claude
   gate <id>                           corre el gate y mueve el estado
-  exec <id> [--role executor|designer|explore] [--instruction T] [--keep]   lanza ese agente en Codex por Herdr
+  explore "<qué vas a escribir>" [--deep] [--fresh] [--json]   ¿ya existe algo reutilizable? (grafo; --deep: Haiku decide)
+  explore --reindex                           indexa el grafo en modo full (hace falta una vez por repo)
+  reuse-check [id] [--base ref] [--strict]    ¿lo escrito en el diff duplica código existente? (--strict: código 1 si hay duplicado)
+  exec <id> [--role executor|designer] [--instruction T] [--keep]   lanza ese agente en Codex por Herdr
   config get <clave> | set <clave> <valor>   p. ej. models.designer.use claude
   metrics collect | report [tarea] | show [tabla]   métricas completas en TOON y un informe legible, sin gastar tokens
   doctor

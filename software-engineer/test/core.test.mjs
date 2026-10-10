@@ -13,6 +13,7 @@ import { loadBacklog, loadProfile } from '../src/store.mjs';
 import { parseTranscript, costOf, collect } from '../src/metrics.mjs';
 import { readRows } from '../src/toonfile.mjs';
 import { proposeProfile } from '../src/init.mjs';
+import { chmodSync } from 'node:fs';
 
 const P = { ...DEFAULT_PROFILE, tiers: { t2: ['migrations/**', 'src/**/auth/**'], t1: [], ui: ['src/components/**'] }, gate: { cmd: 'true' } };
 const tmp = () => mkdtempSync(join(tmpdir(), 'harness-'));
@@ -54,8 +55,8 @@ test('router: Claude solo planner y QA (Sonnet 5.5); executor, designer y explor
   const noCross = { ...P, models: { ...P.models, reviewer: { ...P.models.reviewer, crossFamily: undefined } } };
   assert.equal(route(noCross, 'reviewer', { executorProvider: 'claude' }).wait, true);
   assert.equal(route(P, 'reviewer', { executorProvider: 'codex', available: ['codex'] }).wait, true); // el QA es Claude y no está disponible
-  // explore: modelo barato de Codex, esfuerzo bajo
-  assert.deepEqual(route(P, 'explore', { tier: 'T2' }), { role: 'explore', provider: 'codex', model: 'gpt-6-luna', effort: 'low' });
+  // explore: Haiku 5.5 (script + `claude -p`), sin esfuerzo
+  assert.deepEqual(route(P, 'explore', { tier: 'T2' }), { role: 'explore', provider: 'claude', model: 'claude-haiku-5-5', effort: null });
 });
 
 test('designer: Codex con Pencil por defecto; una clave lo pasa a Claude (Sonnet 5.5, xhigh)', () => {
@@ -1022,7 +1023,7 @@ test('agents sync no congela los valores por defecto en el perfil del proyecto',
   assert.ok(after.agents && after.rules); // lo calculado sí se guarda
   assert.equal(after.models, undefined); // y los modelos por defecto NO
   assert.equal(after.effortCap, undefined);
-  assert.equal(loadProfile(root).models.explore.provider, 'codex'); // así que un default nuevo llega al proyecto
+  assert.equal(loadProfile(root).models.explore.provider, 'claude'); // así que un default nuevo llega al proyecto
 });
 
 test('modelo sin tarifa (gpt-6-luna): el costo queda vacío y el informe lo avisa', () => {
@@ -1035,4 +1036,157 @@ test('modelo sin tarifa (gpt-6-luna): el costo queda vacío y el informe lo avis
   const rows = [{ ...s, task: 't1', depth: 0, in: 1000, cached: 0, out: 10, role: 'explore' }];
   const out = report({ tasks: [], task_roles: [], turns: [], codex: rows, quota: [] });
   assert.match(out, /Sin tarifa conocida.*gpt-6-luna/);
+});
+
+// ---- helpers para los tests de reutilización ----
+const git = (cwd, ...a) => spawnSync('git', a, { cwd, encoding: 'utf8' });
+function repoWithCode() {
+  const r = tmp();
+  git(r, 'init', '-q');
+  mkdirSync(join(r, 'src'), { recursive: true });
+  writeFileSync(join(r, 'src', 'billing.ts'), 'export class BillingPort {\n  charge() {}\n}\n');
+  writeFileSync(join(r, 'src', 'billing.spec.ts'), "import { BillingPort } from './billing';\n");
+  writeFileSync(join(r, 'README.md'), 'Uses BillingPort for payments\n');
+  git(r, 'add', '-A');
+  return r;
+}
+
+function fakeClaude(dir, body) {
+  const f = join(dir, 'claude');
+  writeFileSync(f, `#!/usr/bin/env node\n${body}\n`);
+  chmodSync(f, 0o755);
+  return f;
+}
+
+// ---- reutilización: explore --reuse y reuse-check ----
+import { declarations, exploreReuse, reuseCheck, reuseSearch, similarity } from '../src/reuse.mjs';
+
+const FORMAT_SRC = 'export function formatMoney(value: number): string {\n  if (value === null) return "-";\n  const n = Number(value);\n  if (!Number.isFinite(n)) return "-";\n  const cents = !Number.isInteger(n);\n  return `$${cents ? WITH.format(n) : WHOLE.format(n)}`;\n}\n';
+
+// Grafo falso: responde con lo que el test le pone en FAKE_GRAPH (herramienta → respuesta).
+function fakeGraph(dir, root, answers) {
+  const f = join(dir, 'fake-graph');
+  writeFileSync(f, `#!/usr/bin/env node
+const a = JSON.parse(process.env.FAKE_GRAPH || '{}');
+if (process.argv[2] === '--version') { console.log('fake 0'); process.exit(0); }
+let d = ''; process.stdin.on('data', (c) => (d += c)).on('end', () => { const t = process.argv[3]; let r = a[t]; if (r && r.$when) { const hit = r.$when.find(([re]) => new RegExp(re).test(d)); r = hit ? hit[1] : (r.$default ?? {}); } console.log(JSON.stringify(r ?? {})); });
+`);
+  chmodSync(f, 0o755);
+  process.env.HARNESS_GRAPH_BIN = f;
+  process.env.FAKE_GRAPH = '';
+  return (m) => { process.env.FAKE_GRAPH = JSON.stringify(m); };
+}
+const cleanGraph = () => { delete process.env.HARNESS_GRAPH_BIN; delete process.env.FAKE_GRAPH; };
+
+test('declarations: funciones, flechas y clases con su cuerpo; ignora lo que no es declaración', () => {
+  const t = 'import x from "y";\nexport function a(p) {\n  if (p) {\n    return 1;\n  }\n  return 2;\n}\nexport const b = async (q: number) => {\n  return q;\n};\nclass C {\n  m() {}\n}\nconst z = 5;\n';
+  const d = declarations(t);
+  assert.deepEqual(d.map((x) => [x.name, x.start, x.end]), [['a', 2, 7], ['b', 8, 10], ['C', 11, 13]]);
+});
+
+test('similarity: un renombrado sigue siendo duplicado; una función distinta no', () => {
+  const renamed = FORMAT_SRC.replaceAll('formatMoney', 'toPesos').replaceAll('value', 'amount').replaceAll('cents', 'frac').replaceAll(' n ', ' num ').replaceAll('(n)', '(num)');
+  assert.ok(similarity(FORMAT_SRC, renamed) > 0.8, `renombrado: ${similarity(FORMAT_SRC, renamed)}`);
+  const other = 'export function slug(t: string): string {\n  return t.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");\n}\n';
+  assert.ok(similarity(FORMAT_SRC, other) < 0.2);
+});
+
+test('explore --reuse: ordena por relevancia y uso, descarta tests, rutas HTTP y símbolos que el índice ya no tiene', () => {
+  const r = repoWithCode(); const set = fakeGraph(r, r);
+  const qn = (n) => `proj.src.${n}`;
+  set({
+    list_projects: { projects: [{ name: 'proj', root_path: r, nodes: 900 }] },
+    search_graph: { results: [
+      { name: 'formatMoney', qualified_name: qn('format.formatMoney'), label: 'Function', file_path: `${r}/src/format.ts`, start_line: 1, end_line: 7, rank: -10 },
+      { name: 'formatDate', qualified_name: qn('format.formatDate'), label: 'Function', file_path: `${r}/src/format.ts`, start_line: 9, end_line: 12, rank: -9 },
+      { name: 'helperTest', qualified_name: qn('x.helperTest'), label: 'Function', file_path: `${r}/src/x.spec.ts`, start_line: 1, end_line: 3, rank: -9 },
+      { name: 'GET', qualified_name: qn('route.GET'), label: 'Function', file_path: `${r}/src/app/route.ts`, start_line: 1, end_line: 3, rank: -8 },
+      { name: 'ghost', qualified_name: qn('old.ghost'), label: 'Function', file_path: `${r}/src/old.ts`, start_line: 1, end_line: 3, rank: -8 },
+    ] },
+    query_graph: { $when: [['SIMILAR_TO', { rows: [] }]], $default: { rows: [[qn('format.formatMoney'), '53'], [qn('format.formatDate'), '2']] } },
+    get_code_snippet: { $when: [['ghost', { source: 'function other() {}', is_exported: true }], ['formatMoney', { source: 'export function formatMoney(a) {}', signature: '(a: number)', return_type: ': string', is_exported: true }], ['formatDate', { source: 'export function formatDate(a) {}', signature: '(a: Date)', return_type: ': string', is_exported: true }]], $default: {} },
+  });
+  try {
+    const a = exploreReuse(r, 'format money amounts');
+    assert.equal(a.source, 'graph');
+    assert.deepEqual(a.rows.map((x) => x.name), ['formatMoney', 'formatDate']); // sin test, sin GET, sin el símbolo desaparecido
+    assert.equal(a.rows[0].usedBy, 53);
+    assert.equal(a.rows[0].signature, 'formatMoney(a: number): string');
+  } finally { cleanGraph(); }
+});
+
+test('explore sin grafo: avisa cómo construirlo y no inventa candidatos', () => {
+  const r = repoWithCode();
+  process.env.HARNESS_GRAPH_BIN = '/no/existe/grafo';
+  try {
+    const a = reuseSearch(r, 'BillingPort charge');
+    assert.equal(a.graph, false);
+    assert.deepEqual(a.rows, []);
+    assert.match(a.note, /--reindex/);
+  } finally { cleanGraph(); }
+});
+
+test('explore --reuse --deep: veredictos de Haiku, ruta inventada fuera, y la segunda vez sale del caché', () => {
+  const r = repoWithCode(); const set = fakeGraph(r, r);
+  set({ list_projects: { projects: [{ name: 'proj', root_path: r, nodes: 900 }] }, search_graph: { results: [] }, query_graph: { rows: [] } });
+  const claude = join(r, 'claude');
+  writeFileSync(claude, `#!/usr/bin/env node\nconsole.log(JSON.stringify([{type:'result',result:'reuse|BillingPort|src/billing.ts|1|already charges customers\\nextend|Fake|src/inventada.ts|4|no existe\\nnew|||| nada más',total_cost_usd:0.003}]));\n`);
+  chmodSync(claude, 0o755); process.env.HARNESS_EXPLORE_CLAUDE = claude;
+  try {
+    const a = exploreReuse(r, 'cobrar al cliente', { deep: true });
+    assert.equal(a.source, 'model');
+    assert.deepEqual(a.rows.map((x) => [x.name, x.verdict, x.path]), [['BillingPort', 'reuse', 'src/billing.ts']]);
+    const b = exploreReuse(r, 'cobrar al cliente', { deep: true });
+    assert.equal(b.hit, true);
+    assert.equal(b.rows[0].name, 'BillingPort');
+    assert.equal(b.rows[0].why, 'already charges customers');
+    writeFileSync(join(r, 'src', 'billing.ts'), 'cambió\n'); // el archivo citado cambia: la respuesta cara caduca
+    assert.equal(exploreReuse(r, 'cobrar al cliente', { deep: true }).hit, false);
+  } finally { cleanGraph(); delete process.env.HARNESS_EXPLORE_CLAUDE; }
+});
+
+test('reuse-check: marca el duplicado renombrado y no marca la función distinta', () => {
+  const r = repoWithCode(); const set = fakeGraph(r, r);
+  mkdirSync(join(r, 'src', 'lib'), { recursive: true });
+  writeFileSync(join(r, 'src', 'lib', 'pesos.ts'), 'export function toPesos(amount: number): string {\n  if (amount === null) return "-";\n  const num = Number(amount);\n  if (!Number.isFinite(num)) return "-";\n  const frac = !Number.isInteger(num);\n  return `$${frac ? WITH.format(num) : WHOLE.format(num)}`;\n}\n\nexport function slug(t: string): string {\n  const lower = t.toLowerCase().trim();\n  const dashed = lower.replace(/[^a-z0-9]+/g, "-");\n  return dashed.replace(/^-|-$/g, "");\n}\n');
+  set({
+    list_projects: { projects: [{ name: 'proj', root_path: r, nodes: 900 }] },
+    search_graph: { results: [{ name: 'formatMoney', qualified_name: 'proj.src.format.formatMoney', label: 'Function', file_path: `${r}/src/format.ts`, start_line: 1, end_line: 7, rank: -5 }] },
+    query_graph: { rows: [['proj.src.format.formatMoney', '53']] },
+    get_code_snippet: { source: FORMAT_SRC },
+  });
+  try {
+    const out = reuseCheck(r, { base: 'HEAD' });
+    assert.equal(out.graph, true);
+    const hit = out.findings.find((f) => f.symbol === 'toPesos');
+    assert.ok(hit, JSON.stringify(out));
+    assert.equal(hit.verdict, 'duplicate');
+    assert.equal(hit.matches[0].name, 'formatMoney');
+    assert.equal(hit.matches[0].usedBy, 53);
+    assert.ok(!out.findings.some((f) => f.symbol === 'slug'));
+  } finally { cleanGraph(); }
+});
+
+test('harness explore --reuse (CLI): la intención con espacios llega completa', () => {
+  const r = repoWithCode();
+  process.env.HARNESS_GRAPH_BIN = '/no/existe/grafo';
+  try {
+    const out = spawnSync('node', [join(import.meta.dirname, '..', 'bin', 'harness.mjs'), 'explore', '--reuse', 'format money amounts', '--root', r, '--json'], { encoding: 'utf8', env: process.env });
+    assert.equal(JSON.parse(out.stdout).intent, 'format money amounts');
+  } finally { cleanGraph(); }
+});
+
+test('reuse-check --strict: sale con código 1 solo si hay un duplicado', () => {
+  const r = repoWithCode(); const set = fakeGraph(r, r);
+  mkdirSync(join(r, 'src', 'lib'), { recursive: true });
+  const dup = 'export function toPesos(amount: number): string {\n  if (amount === null) return "-";\n  const num = Number(amount);\n  if (!Number.isFinite(num)) return "-";\n  const frac = !Number.isInteger(num);\n  return `$${frac ? WITH.format(num) : WHOLE.format(num)}`;\n}\n';
+  writeFileSync(join(r, 'src', 'lib', 'pesos.ts'), dup);
+  set({ list_projects: { projects: [{ name: 'proj', root_path: r, nodes: 900 }] }, search_graph: { results: [{ name: 'formatMoney', qualified_name: 'proj.src.format.formatMoney', label: 'Function', file_path: `${r}/src/format.ts`, start_line: 1, end_line: 7, rank: -5 }] }, query_graph: { rows: [] }, get_code_snippet: { source: FORMAT_SRC } });
+  const cli = (...a) => spawnSync('node', [join(import.meta.dirname, '..', 'bin', 'harness.mjs'), 'reuse-check', ...a, '--root', r], { encoding: 'utf8', env: process.env });
+  try {
+    assert.equal(cli().status, 0); // sin --strict solo informa
+    assert.equal(cli('--strict').status, 1);
+    writeFileSync(join(r, 'src', 'lib', 'pesos.ts'), 'export function slug(t: string): string {\n  const lower = t.toLowerCase().trim();\n  const dashed = lower.replace(/[^a-z0-9]+/g, "-");\n  return dashed.replace(/^-|-$/g, "");\n}\n');
+    assert.equal(cli('--strict').status, 0); // nada duplicado: no bloquea
+  } finally { cleanGraph(); }
 });

@@ -22,3 +22,15 @@ export const readRows = (dir, name) => {
   const f = join(dir, `${name}.toon`);
   return existsSync(f) ? (decode(readFileSync(f, 'utf8')).rows ?? []) : [];
 };
+// Quita las filas que cumplen el predicado (para reemplazar el conjunto de una clave, que upsert no hace).
+export function deleteRows(dir, name, pred) {
+  const file = join(dir, `${name}.toon`);
+  if (!existsSync(file)) return 0;
+  const cur = decode(readFileSync(file, 'utf8')).rows ?? [];
+  const keep = cur.filter((r) => !pred(r));
+  if (keep.length === cur.length) return 0;
+  const tmp = `${file}.tmp`;
+  writeFileSync(tmp, encode({ rows: keep }) + '\n');
+  renameSync(tmp, file);
+  return cur.length - keep.length;
+}

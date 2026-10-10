@@ -44,7 +44,8 @@ export const DEFAULT_PROFILE = {
       codex: { provider: 'codex', model: 'gpt-6.1-sol', effort: { T0: 'high', T1: 'high', T2: 'high' } },
       claude: { provider: 'claude', model: 'claude-sonnet-5-5', effort: { T0: 'xhigh', T1: 'xhigh', T2: 'xhigh' } },
     },
-    explore: { provider: 'codex', model: 'gpt-6-luna', effort: { T0: 'low', T1: 'low', T2: 'low' } },
+    // Ya no se lanza por Herdr: `harness explore` (script) y, con --deep, Haiku por `claude -p`. effort: null (no consta que Haiku 5.5 lo admita).
+    explore: { provider: 'claude', model: 'claude-haiku-5-5', effort: null },
   },
   effortCap: 'high', // el perfil no fija nada por encima; solo un reintento puede subir un nivel (máx. xhigh)
 };
@@ -54,6 +55,7 @@ export const DEFAULT_PROFILE = {
 export const PRICES = {
   'claude-opus-5-5': { in: 4, out: 20, cache_read: 0.2 },
   'claude-sonnet-5-5': { in: 2, out: 10, cache_read: 0.2 },
+  'claude-haiku-5-5': { in: 0.1, out: 0.5, cache_read: 0.01 }, // hasta 100.000 tokens de prompt; sobre eso 0.5 / 2.5 / 0.05
   'claude-haiku-4-5': { in: 1, out: 5, cache_read: 0.1 },
   'gpt-6.1-sol': { in: 2, out: 10, cache_read: 0.1 },
   _cache_write_mult: { '5m': 1.25, '1h': 2 },
