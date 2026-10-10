@@ -10,7 +10,7 @@ Orquestador determinista (sin LLM) para trabajar con agentes de código: guarda 
 | `executor` | Codex (vía Herdr) | Escribe el código dentro del scope aprobado |
 | `reviewer` | Claude (Sonnet) | QA y revisión visual |
 | `designer` | Codex + Pencil (o Claude) | Diseño de UI |
-| `explore` | Codex | Preguntas de solo lectura sobre el código |
+| `explore` | Grafo + Haiku 5.5 | ¿Ya existe algo reutilizable? (`harness explore`, `harness reuse-check`); cualquier agente lo llama |
 
 El gate lo corre el script; ningún agente marca una tarea como `done`.
 
@@ -43,7 +43,7 @@ flowchart TD
 
     DONE --> PUSH[Usuario hace push y PR]
 
-    X[Explore · Codex<br/>solo lectura] -.->|consulta suelta, fuera del flujo| P
+    X[Reutilización · grafo<br/>+ Haiku 5.5] -.->|lo llama cualquier agente| P
 ```
 
 Quién decide qué:
@@ -89,7 +89,10 @@ harness task add T1 --title "Login con Google" --category feature --paths 'src/a
 harness task approve T1
 harness next T1                       # siguiente paso: rol, modelo, esfuerzo
 harness exec T1 --instruction "..."   # executor en Codex (pane lateral de Herdr)
-harness exec T1 --role explore --instruction "¿dónde se valida el token?"
+harness explore --reindex                                                 # una vez por repo: indexa el grafo en modo full
+harness explore "formatear montos en pesos"                               # antes de escribir: ¿ya existe algo?
+harness explore "formatear montos en pesos" --deep                        # el código usa otros nombres: Haiku decide reuse/extend/new (se guarda en caché)
+harness reuse-check --strict                                              # después de escribir: ¿el diff duplica código? (código 1 si sí)
 harness gate T1                       # corre el gate y mueve el estado
 ```
 Categorías: `feature fix hotfix refactor perf docs test infrastructure chore release` (`harness categories`). El tier es T0/T1/T2 y gana el más alto entre la categoría y las rutas tocadas (`harness classify <cat> --paths a,b`).

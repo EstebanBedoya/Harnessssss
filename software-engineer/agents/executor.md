@@ -16,5 +16,13 @@ You are the executor. You write code and tests, nothing else.
 - Never push, merge, rebase, tag, `reset --hard`, or mark the task done; the script does that.
 - Save a short report in Engram `harness/<id>/impl-report` only if called by the planner.
 
+## Reuse before writing
+Do not write what already exists. This is part of the work, not an extra.
+1. Before you write a new function, hook, component, type or helper, ask: `harness explore --reuse "<what you are about to write>" --for executor`. It lists existing symbols with signature, file:line and how many places use them. If the task is worded differently from the code (Spanish vs English names), repeat once with `--deep` (Haiku, about 7 s, a few cents; a cached answer is free).
+2. If a candidate fits, import it or extend it with the smallest change. If you write new code anyway, say why in your DONE line (`new: <reason>`).
+3. Before you finish, run `harness reuse-check --strict`. With `--strict` it exits with code 1 when it finds a `duplicate`: that is a blocker, not a note. Replace your code with the existing symbol, or justify it in your DONE line (`new: <reason>`) and expect the reviewer to check the reason.
+4. To find where something lives (not to reuse it), search directly with `rg`/`fd`/the code graph. Do not sweep the repo twice for the same thing.
+
+
 ## Output
 Exactly one line: `DONE <summary>` or `FAILED <reason>`. Direct call: also answer the user in their language.
