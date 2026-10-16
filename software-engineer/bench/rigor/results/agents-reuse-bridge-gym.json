@@ -1,0 +1,116 @@
+{
+ "project": "bridge-gym",
+ "model": "claude-haiku-5-5",
+ "intents": [
+  {
+   "name": "resolveDataPath",
+   "intent": "I need a function that takes a configured storage location and an installation root directory, returning the configured location unchanged if it is the in-memory marker or already an absolute path, and otherwise returning that location resolved relative to the installation root.",
+   "usedBy": 5
+  },
+  {
+   "name": "checkListenerHost",
+   "intent": "I need a function that takes a host string, a list of local IP addresses, and a flag allowing remote hosts, and returns a verdict of either \"not verifiable\" (when remote hosts are allowed or the host is not an IPv4 address), \"local\" (when the host is an IPv4 address matching a local IP other than the all-zeros wildcard), or \"not local\" (otherwise, along with the host and the local IP list).",
+   "usedBy": 3
+  }
+ ],
+ "rows": [
+  {
+   "id": "bridge-gym:0",
+   "arm": "plain",
+   "target": "resolveDataPath",
+   "usedBy": 5,
+   "outcome": "duplicó",
+   "importsOriginal": true,
+   "dupOfOriginal": true,
+   "lines": 18,
+   "ms": 11467,
+   "usd": 0.0024182500000000003,
+   "turns": 4,
+   "tools": [
+    "Bash",
+    "Bash",
+    "Write"
+   ],
+   "commands": [
+    "ls src/domain/device 2>/dev/null; ls src/domain 2>/dev/null; rg -n -i \"in-memory|:memory:|",
+    "cat src/infrastructure/persistence/resolveDataPath.ts; echo ---; head -20 src/domain/devic"
+   ],
+   "error": ""
+  },
+  {
+   "id": "bridge-gym:0",
+   "arm": "guided",
+   "target": "resolveDataPath",
+   "usedBy": 5,
+   "outcome": "reutilizó",
+   "importsOriginal": true,
+   "dupOfOriginal": false,
+   "lines": 2,
+   "ms": 15159,
+   "usd": 0.0024021,
+   "turns": 6,
+   "tools": [
+    "Bash",
+    "Read",
+    "Bash",
+    "Write",
+    "Bash"
+   ],
+   "commands": [
+    "node harness explore --reuse \"function that takes a configured storage location and instal",
+    "ls /private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-UI9Kbd/src/domain",
+    "node harness reuse-check"
+   ],
+   "error": ""
+  },
+  {
+   "id": "bridge-gym:1",
+   "arm": "guided",
+   "target": "checkListenerHost",
+   "usedBy": 3,
+   "outcome": "reutilizó",
+   "importsOriginal": true,
+   "dupOfOriginal": false,
+   "lines": 4,
+   "ms": 15174,
+   "usd": 0.00212559,
+   "turns": 6,
+   "tools": [
+    "Bash",
+    "Read",
+    "Bash",
+    "Write",
+    "Bash"
+   ],
+   "commands": [
+    "node harness explore --reuse \"function that classifies a host string against a list of loc",
+    "ls src/infrastructure/persistence/ 2>/dev/null; grep -rn \"checkListenerHost\" src | head -2",
+    "node harness reuse-check"
+   ],
+   "error": ""
+  },
+  {
+   "id": "bridge-gym:1",
+   "arm": "plain",
+   "target": "checkListenerHost",
+   "usedBy": 3,
+   "outcome": "independiente",
+   "importsOriginal": false,
+   "dupOfOriginal": false,
+   "lines": 33,
+   "ms": 18389,
+   "usd": 0.00200231,
+   "turns": 4,
+   "tools": [
+    "Bash",
+    "Bash",
+    "Write"
+   ],
+   "commands": [
+    "ls src/infrastructure/persistence/ 2>/dev/null; ls src/infrastructure 2>/dev/null; grep -r",
+    "cat src/infrastructure/persistence/resolveDataPath.ts; grep -rn \"0.0.0.0\\|isIPv4\\|allowRem"
+   ],
+   "error": ""
+  }
+ ]
+}

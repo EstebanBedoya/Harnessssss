@@ -1,0 +1,1069 @@
+{
+ "seed": 7,
+ "generated": "2026-10-10",
+ "cases": [
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "commit",
+   "query": "pantalla de aperturas en el back office",
+   "truth": [
+    "src/app/staff/(back-office)/door/page.tsx",
+    "src/components/atoms/Icon.tsx",
+    "src/components/organisms/AdminSidebar.tsx",
+    "src/components/organisms/DoorAccessPanel.tsx",
+    "src/infrastructure/db/queries/doorOpenings.queries.ts"
+   ],
+   "commit": "5f1ce2ab",
+   "id": "gym-app:commit:0"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "commit",
+   "query": "rechazar confirm/fail sobre una fila REQUESTED sin encolar",
+   "truth": [
+    "src/application/access/ConfirmEnrollmentUseCase.spec.ts",
+    "src/application/access/ConfirmEnrollmentUseCase.ts",
+    "src/application/access/FailEnrollmentUseCase.spec.ts",
+    "src/application/access/FailEnrollmentUseCase.ts"
+   ],
+   "commit": "98f57710",
+   "id": "gym-app:commit:1"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "commit",
+   "query": "fixtures sintéticos en el spec de filas recicladas (sin nombres reales)",
+   "truth": [
+    "tests/integration/migration/recycledRowIdentities.int.spec.ts"
+   ],
+   "commit": "f92ea705",
+   "id": "gym-app:commit:2"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "commit",
+   "query": "ADR-175 a ADR-180, AI_USAGE y el manual sin el paso del kiosco",
+   "truth": [
+    "Docs/manual/capture-flows.mjs",
+    "Docs/manual/capture.mjs",
+    "Docs/manual/manual.template.html"
+   ],
+   "commit": "141ae8d9",
+   "id": "gym-app:commit:3"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "commit",
+   "query": "no arrastrar el rename de countTodayForMember de otra rama",
+   "truth": [
+    "src/application/membership/ChangeMembershipPlanUseCase.spec.ts"
+   ],
+   "commit": "f8dd8da6",
+   "id": "gym-app:commit:4"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "commit",
+   "query": "congelar una membresía terminada la escondía del cron",
+   "truth": [
+    "src/application/membership/FreezeMembershipUseCase.spec.ts",
+    "src/application/membership/FreezeMembershipUseCase.ts"
+   ],
+   "commit": "cf7b9cff",
+   "id": "gym-app:commit:5"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "commit",
+   "query": "UI to open and close the drawer, on its own nav entry",
+   "truth": [
+    "src/app/staff/(back-office)/cash-session/page.tsx",
+    "src/components/organisms/AdminSidebar.tsx",
+    "src/components/organisms/CashSessionHistory.tsx",
+    "src/components/organisms/CashSessionPanel.tsx"
+   ],
+   "commit": "8b88277e",
+   "id": "gym-app:commit:6"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "commit",
+   "query": "el fake anulaba ventas sin anular nada y decía que sí",
+   "truth": [
+    "tests/integration/support/fakeApiPos.ts"
+   ],
+   "commit": "8c533aa4",
+   "id": "gym-app:commit:7"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "commit",
+   "query": "corregir el codigo a mano, y sugerir uno libre al asignarlo",
+   "truth": [
+    "src/app/api/members/[id]/access-code/route.ts",
+    "src/app/staff/(back-office)/members/[id]/page.tsx",
+    "src/application/access/SetAccessCodeUseCase.spec.ts",
+    "src/application/access/SetAccessCodeUseCase.ts",
+    "src/components/molecules/AccessCodeField.tsx",
+    "src/domain/access/errors.ts"
+   ],
+   "commit": "916fb9d9",
+   "id": "gym-app:commit:8"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "commit",
+   "query": "modelo DoorOpening para cortesias y dias pagados",
+   "truth": [
+    "prisma/migrations/20260808120000_door_opening/migration.sql",
+    "prisma/schema.prisma"
+   ],
+   "commit": "b067af8f",
+   "id": "gym-app:commit:9"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "commit",
+   "query": "close authorization and rendering coverage gaps",
+   "truth": [
+    "src/app/api/expenses/expenses.int.spec.ts",
+    "src/app/api/users/[id]/salary.int.spec.ts",
+    "src/components/organisms/OperatingExpenses.spec.ts",
+    "src/components/testSupport/loadTsxForTest.ts"
+   ],
+   "commit": "f70c763d",
+   "id": "gym-app:commit:10"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "commit",
+   "query": "el ETL nunca le saca el código de acceso a quien lo tiene",
+   "truth": [
+    "scripts/migration/migrate.ts",
+    "src/domain/migration/transforms.spec.ts",
+    "src/domain/migration/transforms.ts"
+   ],
+   "commit": "55145da7",
+   "id": "gym-app:commit:11"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "commit",
+   "query": "cross the device biometric inventory with gym-app enrollments",
+   "truth": [
+    ".gitignore",
+    "scripts/audit-biometrics.ts",
+    "src/lib/biometric-audit/classify.spec.ts",
+    "src/lib/biometric-audit/classify.ts"
+   ],
+   "commit": "e6974e98",
+   "id": "gym-app:commit:12"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "commit",
+   "query": "add idempotent cash expense and reversal endpoints",
+   "truth": [
+    "scripts/fake-api-pos.ts",
+    "src/infrastructure/adapters/ApiPosAdapter.spec.ts",
+    "src/infrastructure/adapters/ApiPosAdapter.ts",
+    "tests/integration/expenses/expensePosContract.int.spec.ts",
+    "tests/integration/support/fakeApiPos.ts"
+   ],
+   "commit": "d4cdb3c3",
+   "id": "gym-app:commit:13"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "symbol",
+   "query": "IExpensesPeriodReader",
+   "truth": [
+    "src/domain/expenses/IExpensesPeriodReader.ts"
+   ],
+   "id": "gym-app:symbol:14"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "symbol",
+   "query": "CheckInValidator",
+   "truth": [
+    "src/application/door/GrantMemberEntryUseCase.ts"
+   ],
+   "id": "gym-app:symbol:15"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "symbol",
+   "query": "planFilterOptions",
+   "truth": [
+    "src/lib/members/planFilterOptions.ts"
+   ],
+   "id": "gym-app:symbol:16"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "symbol",
+   "query": "UploadFileInput",
+   "truth": [
+    "src/domain/storage/IStorageService.ts"
+   ],
+   "id": "gym-app:symbol:17"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "symbol",
+   "query": "validateAccess",
+   "truth": [
+    "src/domain/access/validateAccess.ts"
+   ],
+   "id": "gym-app:symbol:18"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "symbol",
+   "query": "expenseErrorResponse",
+   "truth": [
+    "src/app/api/expenses/_lib/expensesHttp.ts"
+   ],
+   "id": "gym-app:symbol:19"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "symbol",
+   "query": "RateLimitedError",
+   "truth": [
+    "src/domain/auth/errors.ts"
+   ],
+   "id": "gym-app:symbol:20"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "symbol",
+   "query": "NextPeriodEndInput",
+   "truth": [
+    "src/domain/billing/billingPeriod.ts"
+   ],
+   "id": "gym-app:symbol:21"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "file",
+   "query": "billing.queries",
+   "truth": [
+    "src/infrastructure/db/queries/billing.queries.ts"
+   ],
+   "id": "gym-app:file:22"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "file",
+   "query": "ResolveDoorOpeningUseCase",
+   "truth": [
+    "src/application/door/ResolveDoorOpeningUseCase.ts"
+   ],
+   "id": "gym-app:file:23"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "file",
+   "query": "CheckInLog",
+   "truth": [
+    "src/components/organisms/CheckInLog.tsx"
+   ],
+   "id": "gym-app:file:24"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "file",
+   "query": "apiClient",
+   "truth": [
+    "src/lib/apiClient.ts"
+   ],
+   "id": "gym-app:file:25"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "file",
+   "query": "RefundsTable",
+   "truth": [
+    "src/components/_bench/baseline/RefundsTable.tsx",
+    "src/components/_bench/graph/RefundsTable.tsx"
+   ],
+   "id": "gym-app:file:26"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "file",
+   "query": "PrismaExpensesPeriodReader",
+   "truth": [
+    "src/infrastructure/db/repositories/PrismaExpensesPeriodReader.ts"
+   ],
+   "id": "gym-app:file:27"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "commit",
+   "query": "el sondeo de pendientes tiene su propio timeout, no el del molinete",
+   "truth": [
+    ".env.example",
+    "src/index.ts",
+    "src/infrastructure/config/env.spec.ts",
+    "src/infrastructure/config/env.ts",
+    "src/infrastructure/http/GymAppClient.spec.ts",
+    "src/infrastructure/http/GymAppClient.ts"
+   ],
+   "commit": "f53448e0",
+   "id": "bridge-gym:commit:28"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "commit",
+   "query": "wire the audit probe and alarm threshold into the health check",
+   "truth": [
+    "src/composition.ts",
+    "src/index.ts"
+   ],
+   "commit": "543b0591",
+   "id": "bridge-gym:commit:29"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "commit",
+   "query": "el slot de plantilla horaria es configuración, no constante",
+   "truth": [
+    ".env.example",
+    "src/index.ts",
+    "src/infrastructure/config/env.spec.ts",
+    "src/infrastructure/config/env.ts"
+   ],
+   "commit": "ae0b1a40",
+   "id": "bridge-gym:commit:30"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "commit",
+   "query": "ADR-040 y ADR-041, y las cuatro paginas que decian lo contrario",
+   "truth": [
+    "src/door.ts",
+    "src/infrastructure/device/ReadOnlyDeviceGuard.ts",
+    "src/infrastructure/isapi/HikvisionAdapter.ts"
+   ],
+   "commit": "f3ab7458",
+   "id": "bridge-gym:commit:31"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "commit",
+   "query": "name mismatch uses identity-name comparison and expired windows are not open doors",
+   "truth": [
+    "src/domain/device/permissionDrift.spec.ts",
+    "src/domain/device/permissionDrift.ts"
+   ],
+   "commit": "1ced0fc3",
+   "id": "bridge-gym:commit:32"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "commit",
+   "query": "verificación en sitio del device y apertura remota de diagnóstico",
+   "truth": [
+    ".atl/.skill-registry.cache.json",
+    "package.json",
+    "src/door.ts",
+    "src/infrastructure/isapi/HikvisionAdapter.spec.ts",
+    "src/infrastructure/isapi/HikvisionAdapter.ts"
+   ],
+   "commit": "3800fcb8",
+   "id": "bridge-gym:commit:33"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "commit",
+   "query": "el ciclo pasa a bucle de long-poll con fallback, y deja de ser mudo",
+   "truth": [
+    "src/application/EnrollBiometricsUseCase.spec.ts",
+    "src/application/EnrollBiometricsUseCase.ts",
+    "src/application/enrollmentPollPlan.spec.ts",
+    "src/application/enrollmentPollPlan.ts",
+    "src/index.ts"
+   ],
+   "commit": "2b565212",
+   "id": "bridge-gym:commit:34"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "commit",
+   "query": "la epoca Unix no es una fecha valida para este firmware",
+   "truth": [
+    "scripts/install-service.ps1",
+    "src/application/SyncPermissionsUseCase.spec.ts",
+    "src/application/SyncPermissionsUseCase.ts",
+    "src/index.ts",
+    "src/infrastructure/isapi/HikvisionAdapter.spec.ts",
+    "src/infrastructure/isapi/HikvisionAdapter.ts"
+   ],
+   "commit": "16ab99ee",
+   "id": "bridge-gym:commit:35"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "commit",
+   "query": "cableado, interruptor propio y ciclo de tres segundos",
+   "truth": [
+    ".env.example",
+    "src/composition.ts",
+    "src/index.ts",
+    "src/infrastructure/config/env.ts"
+   ],
+   "commit": "ad774703",
+   "id": "bridge-gym:commit:36"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "commit",
+   "query": "backlog, registro de IA y LEEME de los pendientes del 2026-08-08",
+   "truth": [
+    "VERSION",
+    "src/domain/access/devicePin.ts"
+   ],
+   "commit": "3d73619e",
+   "id": "bridge-gym:commit:37"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "commit",
+   "query": "say what the audit actually keeps across a failed read and why suppressed drift never alarms",
+   "truth": [
+    "src/application/AuditDevicePermissionsUseCase.spec.ts",
+    "src/application/AuditDevicePermissionsUseCase.ts",
+    "src/domain/device/IAppliedPermissionStore.ts",
+    "src/domain/device/permissionDrift.ts"
+   ],
+   "commit": "24cc26d6",
+   "id": "bridge-gym:commit:38"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "commit",
+   "query": "la ventana de captura se respeta antes de tocar el device",
+   "truth": [
+    "src/application/EnrollBiometricsUseCase.spec.ts",
+    "src/application/EnrollBiometricsUseCase.ts",
+    "src/domain/access/enrollmentWindow.spec.ts",
+    "src/domain/access/enrollmentWindow.ts",
+    "src/domain/access/types.ts"
+   ],
+   "commit": "e728e340",
+   "id": "bridge-gym:commit:39"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "commit",
+   "query": "an empty snapshot with non-empty belief is unreadable, not mass drift",
+   "truth": [
+    "src/application/AuditDevicePermissionsUseCase.spec.ts",
+    "src/application/AuditDevicePermissionsUseCase.ts"
+   ],
+   "commit": "d48303a5",
+   "id": "bridge-gym:commit:40"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "commit",
+   "query": "un reason desconocido tumbaba el lote entero de aperturas",
+   "truth": [
+    "src/domain/door/types.ts",
+    "src/infrastructure/http/GymAppClient.spec.ts",
+    "src/infrastructure/http/GymAppClient.ts",
+    "src/sandbox/FakeGymApp.ts"
+   ],
+   "commit": "3df559a3",
+   "id": "bridge-gym:commit:41"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "symbol",
+   "query": "ProvisionDeviceCommand",
+   "truth": [
+    "src/application/ProvisionDeviceUseCase.ts"
+   ],
+   "id": "bridge-gym:symbol:42"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "symbol",
+   "query": "RouteIdentificationEventUseCase",
+   "truth": [
+    "src/application/RouteIdentificationEventUseCase.ts"
+   ],
+   "id": "bridge-gym:symbol:43"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "symbol",
+   "query": "installProcessLogging",
+   "truth": [
+    "src/infrastructure/logging/installProcessLogging.ts"
+   ],
+   "id": "bridge-gym:symbol:44"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "symbol",
+   "query": "DeviceVerdict",
+   "truth": [
+    "src/domain/access/deviceVerdict.ts"
+   ],
+   "id": "bridge-gym:symbol:45"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "symbol",
+   "query": "assertValidTimeZone",
+   "truth": [
+    "src/domain/device/deviceTime.ts"
+   ],
+   "id": "bridge-gym:symbol:46"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "symbol",
+   "query": "toBridgeHealthReports",
+   "truth": [
+    "src/application/toBridgeHealthReports.ts"
+   ],
+   "id": "bridge-gym:symbol:47"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "symbol",
+   "query": "IIdentityMapRefresher",
+   "truth": [
+    "src/domain/device/IIdentityMapRefresher.ts"
+   ],
+   "id": "bridge-gym:symbol:48"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "symbol",
+   "query": "asObject",
+   "truth": [
+    "src/infrastructure/isapi/parseUserSearchEnvelope.ts"
+   ],
+   "id": "bridge-gym:symbol:49"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "file",
+   "query": "IAppliedPermissionStore",
+   "truth": [
+    "src/domain/device/IAppliedPermissionStore.ts"
+   ],
+   "id": "bridge-gym:file:50"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "file",
+   "query": "MigrateIdentitiesUseCase",
+   "truth": [
+    "src/application/MigrateIdentitiesUseCase.ts"
+   ],
+   "id": "bridge-gym:file:51"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "file",
+   "query": "parseUserSearchPage",
+   "truth": [
+    "src/infrastructure/isapi/parseUserSearchPage.ts"
+   ],
+   "id": "bridge-gym:file:52"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "file",
+   "query": "IFaceEnrollmentDevice",
+   "truth": [
+    "src/domain/device/IFaceEnrollmentDevice.ts"
+   ],
+   "id": "bridge-gym:file:53"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "file",
+   "query": "eslint.config",
+   "truth": [
+    "eslint.config.mjs"
+   ],
+   "id": "bridge-gym:file:54"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "file",
+   "query": "HealthAlerter",
+   "truth": [
+    "src/infrastructure/alerts/HealthAlerter.ts"
+   ],
+   "id": "bridge-gym:file:55"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "commit",
+   "query": "treat empty optional secrets as unset",
+   "truth": [
+    "apps/api/src/shared/config/env.schema.ts"
+   ],
+   "commit": "b33dabcb",
+   "id": "vidar-app:commit:56"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "commit",
+   "query": "single-export data source for typeorm cli",
+   "truth": [
+    "apps/api/package.json",
+    "apps/api/src/shared/database/data-source.cli.ts"
+   ],
+   "commit": "b9671377",
+   "id": "vidar-app:commit:57"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "commit",
+   "query": "align progression and bodyweight tests with spec clarifications",
+   "truth": [
+    "packages/domain/src/bodyweight/compute-deltas.spec.ts",
+    "packages/domain/src/progression/properties.spec.ts"
+   ],
+   "commit": "222cabab",
+   "id": "vidar-app:commit:58"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "commit",
+   "query": "cover routines order and global auth guard",
+   "truth": [
+    "apps/api/test/global-auth-guard.int-spec.ts",
+    "apps/api/test/routines-order.int-spec.ts"
+   ],
+   "commit": "aed1678f",
+   "id": "vidar-app:commit:59"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "commit",
+   "query": "await async RNTL calls and isolate gym sync throttle",
+   "truth": [
+    "apps/mobile/src/app/(tabs)/plan/gym-routines.test.tsx",
+    "apps/mobile/src/app/(tabs)/plan/gym-routines.tsx"
+   ],
+   "commit": "7c1c5c55",
+   "id": "vidar-app:commit:60"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "commit",
+   "query": "export override date shape",
+   "truth": [
+    "apps/mobile/src/features/account-migration/build-local-export.full.test.ts"
+   ],
+   "commit": "a37f562d",
+   "id": "vidar-app:commit:61"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "commit",
+   "query": "cover spec 02 sign-up/reset and spec 03 PATCH custom-exercises",
+   "truth": [
+    "apps/api/test/custom-exercises-patch.int-spec.ts",
+    "apps/mobile/src/app/(auth)/sign-in.test.tsx",
+    "apps/mobile/src/shared/auth/session.test.tsx"
+   ],
+   "commit": "a543331b",
+   "id": "vidar-app:commit:62"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "commit",
+   "query": "brand theme tokens and health contract client",
+   "truth": [
+    "apps/mobile/src/app/index.tsx",
+    "apps/mobile/src/shared/api/index.ts",
+    "apps/mobile/src/shared/theme/index.ts"
+   ],
+   "commit": "da1313d9",
+   "id": "vidar-app:commit:63"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "commit",
+   "query": "add failing mobile tests for spec 08 progress",
+   "truth": [
+    "apps/mobile/src/app/(tabs)/progress/history/[id].test.tsx",
+    "apps/mobile/src/app/(tabs)/progress/history/index.test.tsx",
+    "apps/mobile/src/app/(tabs)/progress/index.test.tsx",
+    "apps/mobile/src/app/(tabs)/progress/muscles.test.tsx",
+    "apps/mobile/src/features/stats/BodyMap.test.tsx"
+   ],
+   "commit": "e600901c",
+   "id": "vidar-app:commit:64"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "commit",
+   "query": "add failing mobile tests for spec 10 portability",
+   "truth": [
+    "apps/mobile/src/app/(tabs)/settings/data.test.tsx",
+    "apps/mobile/src/app/(tabs)/settings/import-plan.test.tsx"
+   ],
+   "commit": "a9012477",
+   "id": "vidar-app:commit:65"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "commit",
+   "query": "cover routine get, stable ids and custom exercise idempotency",
+   "truth": [
+    "apps/api/test/custom-exercises-idempotency.int-spec.ts",
+    "apps/api/test/routines-get.int-spec.ts"
+   ],
+   "commit": "290c2181",
+   "id": "vidar-app:commit:66"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "commit",
+   "query": "add failing mobile tests for spec 04 plan",
+   "truth": [
+    "apps/mobile/src/app/(tabs)/plan/index.test.tsx",
+    "apps/mobile/src/app/(tabs)/plan/routine/[id].test.tsx",
+    "apps/mobile/src/app/(tabs)/plan/routine/new.test.tsx"
+   ],
+   "commit": "7b0ca299",
+   "id": "vidar-app:commit:67"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "commit",
+   "query": "verify specs 07 and 08",
+   "truth": [
+    "apps/api/test/bodyweight-delete-no-consent.int-spec.ts",
+    "apps/mobile/src/app/(tabs)/plan/index.offline.test.tsx",
+    "apps/mobile/src/app/(tabs)/progress/history/[id].conflict.test.tsx",
+    "apps/mobile/src/features/bodyweight/range-filter.test.ts",
+    "apps/mobile/src/features/stats/BodyMap.test.tsx",
+    "apps/mobile/src/shared/time/clock.test.ts"
+   ],
+   "commit": "9e31862c",
+   "id": "vidar-app:commit:68"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "commit",
+   "query": "verify specs 03, 04 mobile and 05 follow-ups",
+   "truth": [
+    "apps/mobile/src/app/(tabs)/library/index.test.tsx",
+    "apps/mobile/src/app/(tabs)/library/one-rm.test.tsx",
+    "apps/mobile/src/app/(tabs)/plan/index.test.tsx",
+    "apps/mobile/src/app/(tabs)/plan/routine/[id].test.tsx",
+    "apps/mobile/src/shared/api/plan.test.ts"
+   ],
+   "commit": "e4e60cda",
+   "id": "vidar-app:commit:69"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "symbol",
+   "query": "columnIndex",
+   "truth": [
+    "apps/api/src/modules/imports/domain/csv.ts"
+   ],
+   "id": "vidar-app:symbol:70"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "symbol",
+   "query": "setUnauthorizedHandler",
+   "truth": [
+    "apps/mobile/src/shared/api/client.ts"
+   ],
+   "id": "vidar-app:symbol:71"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "symbol",
+   "query": "ReviewDecision",
+   "truth": [
+    "apps/mobile/src/shared/api/coach.ts"
+   ],
+   "id": "vidar-app:symbol:72"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "symbol",
+   "query": "CoachPlanRoutine",
+   "truth": [
+    "packages/domain/src/coach/types.ts"
+   ],
+   "id": "vidar-app:symbol:73"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "symbol",
+   "query": "PutBodyweightInput",
+   "truth": [
+    "packages/contracts/src/bodyweight.ts"
+   ],
+   "id": "vidar-app:symbol:74"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "symbol",
+   "query": "NotificationsModule",
+   "truth": [
+    "apps/api/src/modules/notifications/notifications.module.ts"
+   ],
+   "id": "vidar-app:symbol:75"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "symbol",
+   "query": "RoutineExerciseForPreview",
+   "truth": [
+    "packages/domain/src/plan/routine-muscle-preview.ts"
+   ],
+   "id": "vidar-app:symbol:76"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "symbol",
+   "query": "effectiveRoutineId",
+   "truth": [
+    "apps/app/src/lib/history.js"
+   ],
+   "id": "vidar-app:symbol:77"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "file",
+   "query": "canonicalize-workout",
+   "truth": [
+    "apps/api/src/modules/workouts/domain/canonicalize-workout.ts"
+   ],
+   "id": "vidar-app:file:78"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "file",
+   "query": "normalize-muscles",
+   "truth": [
+    "packages/domain/src/exercises/normalize-muscles.ts"
+   ],
+   "id": "vidar-app:file:79"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "file",
+   "query": "body-paths",
+   "truth": [
+    "apps/app/src/lib/body-paths.js"
+   ],
+   "id": "vidar-app:file:80"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "file",
+   "query": "is-tombstoned.use-case",
+   "truth": [
+    "apps/api/src/modules/identity/application/is-tombstoned.use-case.ts"
+   ],
+   "id": "vidar-app:file:81"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "file",
+   "query": "noop-import-commit-fault-injector",
+   "truth": [
+    "apps/api/src/modules/imports/infrastructure/noop-import-commit-fault-injector.ts"
+   ],
+   "id": "vidar-app:file:82"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "file",
+   "query": "import-commit-transaction.port",
+   "truth": [
+    "apps/api/src/modules/imports/domain/import-commit-transaction.port.ts"
+   ],
+   "id": "vidar-app:file:83"
+  }
+ ]
+}

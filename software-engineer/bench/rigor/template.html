@@ -1,0 +1,181 @@
+<title>Medición del explorer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#f7f7f5;--card:#fff;--ink:#16181a;--ink2:#52544f;--ink3:#7b7d77;--line:#dcded8;--grid:#ebece7;
+--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--good:#1d7a4d;--bad:#b3402f;--warnbg:#fbf1e6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121413;--card:#1a1c1b;--ink:#eceeea;--ink2:#b9bbb4;--ink3:#8c8e87;--line:#2e312e;--grid:#242725;
+--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--good:#58c58f;--bad:#e8806f;--warnbg:#2a221a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121413;--card:#1a1c1b;--ink:#eceeea;--ink2:#b9bbb4;--ink3:#8c8e87;--line:#2e312e;--grid:#242725;
+--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--good:#58c58f;--bad:#e8806f;--warnbg:#2a221a;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 "IBM Plex Sans",system-ui,sans-serif;margin:0;padding-inline:16px;padding-block:32px}
+main{max-width:960px;margin:auto;display:grid;gap:36px;min-width:0}
+h1{font:600 30px/1.2 "IBM Plex Mono",monospace;margin:0 0 6px;text-wrap:balance}
+h2{font:600 14px "IBM Plex Mono",monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2);margin:0 0 12px}
+h3{font:600 15px "IBM Plex Sans",sans-serif;margin:18px 0 6px}
+p{margin:0 0 10px;max-width:70ch}ul{margin:0;padding-left:20px}li{margin-bottom:6px;max-width:72ch}
+code{font:13px "IBM Plex Mono",monospace;background:var(--grid);padding:1px 5px;border-radius:3px}
+.mut{color:var(--ink2)}.small{font-size:13px;color:var(--ink2)}
+.verdict{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px 18px}
+.verdict li{margin-bottom:8px}
+.warn{background:var(--warnbg);border-left:3px solid var(--s2);padding:10px 14px;border-radius:0 6px 6px 0}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font:600 12px "IBM Plex Mono",monospace;color:var(--ink2)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;margin-bottom:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+.bars{display:grid;gap:7px}
+.row{display:grid;grid-template-columns:132px 1fr 92px;align-items:center;gap:8px;font-size:13px}
+.row .lab{color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.track{position:relative;height:16px;background:var(--grid);border-radius:2px}
+.fill{position:absolute;left:0;top:0;height:100%;border-radius:0 4px 4px 0}
+.whisk{position:absolute;top:7px;height:2px;background:var(--ink);opacity:.7}
+.cap{position:absolute;top:3px;width:2px;height:10px;background:var(--ink);opacity:.7}
+.val{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink);text-align:right}
+.tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:6px 9px;border-radius:5px;z-index:9;display:none;max-width:260px}
+.ok{color:var(--good);font-weight:600}.no{color:var(--bad);font-weight:600}
+@media(max-width:520px){.row{grid-template-columns:96px 1fr 78px}}
+</style>
+<main>
+<header><h1>Medición del explorer</h1>
+<p class="mut">Tres proyectos de Gym Suit · 84 consultas con respuesta verificable · tres métodos de búsqueda · agentes reales con Claude Haiku 5.5</p></header>
+
+<section class="verdict"><h2>Resumen</h2>{{RESUMEN}}</section>
+
+<section><h2>Cómo se midió</h2>
+<ul>
+<li><b>Corpus.</b> gym-app (1752 archivos), bridge-gym (325) y vidar-app (1366). 28 consultas por proyecto con semilla fija: 14 tareas tomadas de commits reales, 8 símbolos únicos y 6 nombres de archivo.</li>
+<li><b>Verdad independiente.</b> Para las tareas, la respuesta correcta son los archivos que ese commit cambió y que siguen existiendo; la pregunta es el asunto del commit. Ninguna herramienta de búsqueda decide qué es correcto.</li>
+<li><b>Tradicional.</b> <code>rg</code> y <code>fd</code> como los usaría un agente: nombres con <code>fd</code>, texto con <code>rg</code>, y para frases se busca cada palabra clave y se ordena por cuántas aciertan.</li>
+<li><b>Grafo.</b> <code>codebase-memory-mcp</code> con índice en modo <code>full</code>: búsqueda BM25 (<code>search_graph --query</code>) y, para nombres exactos, <code>name_pattern</code>.</li>
+<li><b>Explorer.</b> <code>harness explore</code> en frío (busca y guarda), en caliente (caché) y <code>--deep</code> (Haiku 5.5, solo en tareas).</li>
+<li><b>Estadística.</b> Medias con intervalo de confianza del 95% (bootstrap, 2000 remuestreos) y comparaciones por pares sobre las mismas consultas.</li>
+</ul>
+<div class="warn" style="margin-top:12px"><b>Corrección de mi medición anterior.</b> El índice del grafo que usé antes tenía 1944 nodos; en modo <code>full</code> tiene 13112. Además no usé su búsqueda BM25. Mi conclusión de que el grafo no servía estaba sesgada por eso, y aquí se corrige.</div>
+</section>
+
+<section><h2>1 · Recuperación directa (sin agente)</h2>
+<p>MRR: promedio de 1/posición del primer archivo correcto (1.0 es acertar siempre en primer lugar). La línea negra es el intervalo de confianza del 95%.</p>
+<div class="legend" id="leg1"></div>
+<div class="grid2" id="retrieval"></div>
+<h3>Tabla completa</h3><div class="scroll"><table id="t-ret"></table></div>
+<h3>Comparaciones por pares (MRR)</h3>
+<p class="small">Misma consulta, dos métodos. Δ es la diferencia media de MRR; si el intervalo cruza 0 no hay diferencia demostrable.</p>
+<div class="scroll"><table id="t-pair"></table></div>
+</section>
+
+<section><h2>2 · Velocidad</h2>
+<p class="small">Mediana por consulta, corridas de a un proyecto sin otra carga (5 repeticiones). El explorer en frío incluye escribir el caché.</p>
+<div class="scroll"><table id="t-lat"></table></div></section>
+
+<section><h2>3 · Caché</h2>
+<div class="grid2">
+<div class="panel"><h3 style="margin-top:0">Simulación de carga</h3><div id="sim"></div>
+<p class="small">300 consultas de 4 roles sobre las 28 de cada proyecto, con repetición tipo Zipf. <b>La tasa de aciertos depende de esa suposición</b>: con otro patrón de repetición cambia.</p></div>
+<div class="panel"><h3 style="margin-top:0">Invalidación (prueba de que no devuelve datos viejos)</h3><div class="scroll"><table id="t-inv"></table></div>
+<p class="small">Sobre una copia del repo: se edita un archivo citado, se agrega un archivo que coincide, se edita uno no citado. Las entradas de Haiku se simulan con un <code>claude</code> falso porque aquí se prueba el mecanismo, no al modelo.</p></div>
+</div>
+<div class="panel" style="margin-top:14px"><h3 style="margin-top:0">Lo que el caché sí y no aporta</h3>{{CACHE_TEXT}}</div>
+</section>
+
+<section><h2>4 · Agentes reales de punta a punta</h2>
+{{AGENT_INTRO}}
+<div class="legend" id="leg2"></div>
+<div class="grid2" id="agents"></div>
+<h3>Costo y esfuerzo por tarea</h3>
+<div class="scroll"><table id="t-agent"></table></div>
+{{AGENT_TEXT}}
+</section>
+
+<section><h2>5 · Reutilización de código</h2>
+{{REUSE_INTRO}}
+<h3>A · ¿Encuentra lo que el desarrollador realmente reutilizó?</h3>
+<p class="small">36 commits reales donde el desarrollador importó módulos que ya existían. Fracción de esos módulos que cada método pone entre sus 8 primeros archivos.</p>
+<div class="legend" id="legA"></div>
+<div class="grid2"><div class="panel"><div class="bars" id="reuseA"></div></div><div class="panel scroll"><table id="t-reuseA"></table></div></div>
+<h3>B · ¿Detecta duplicados escritos con otros nombres?</h3>
+<p class="small">Se copian funciones existentes a una copia indexada del repo, disfrazadas en tres niveles, y se corre <code>reuse-check</code>. El control negativo usa funciones de otros repos, que no deberían marcarse.</p>
+<div class="scroll"><table id="t-reuseB"></table></div>
+<h3>C · Agentes reales: ¿reutilizan o escriben de nuevo?</h3>
+<p class="small">Requisito para el que ya existe una función (redactado sin su nombre). Mismo agente (Haiku 5.5), archivo nuevo en otro módulo. Sin guía contra con las reglas del executor (<code>explore --reuse</code> y <code>reuse-check</code>).</p>
+<div class="grid2"><div class="panel" id="reuseC"></div><div class="panel scroll"><table id="t-reuseC"></table></div></div>
+{{REUSE_TEXT}}
+</section>
+<section><h2>6 · Qué cambió en el harness</h2>{{DECISIONS}}</section>
+<section><h2>7 · Errores que la medición destapó</h2>{{BUGS}}</section>
+<section><h2>8 · Límites de esta medición</h2>{{LIMITS}}</section>
+<section><h2>9 · Qué haría ahora</h2>{{RECO}}</section>
+</main>
+<div class="tip" id="tip"></div>
+<script>
+const S=__SUMMARY__;
+const COL={trad:'var(--s1)',graph_bm25:'var(--s2)',graph_name:'var(--s2)',explorer_cold:'var(--s3)',explorer_warm:'var(--s3)',explorer_deep:'var(--s4)',explorer_deep_warm:'var(--s4)'};
+const NAME={trad:'rg + fd',graph_bm25:'grafo (BM25)',graph_name:'grafo (nombre)',explorer_cold:'explorer script',explorer_warm:'explorer caché',explorer_deep:'explorer --deep',explorer_deep_warm:'--deep en caché'};
+const f2=x=>x.toFixed(2);const ci=s=>`${f2(s.mean)} [${f2(s.ci[0])}–${f2(s.ci[1])}]`;
+const tip=document.getElementById('tip');
+function bindTip(el,html){el.addEventListener('mousemove',e=>{tip.innerHTML=html;tip.style.display='block';tip.style.left=Math.min(e.clientX+12,innerWidth-270)+'px';tip.style.top=(e.clientY+14)+'px'});el.addEventListener('mouseleave',()=>tip.style.display='none')}
+function bar(label,stat,color,max=1,extra=''){
+ const row=document.createElement('div');row.className='row';
+ const lo=Math.max(0,stat.ci[0]/max*100),hi=Math.min(100,stat.ci[1]/max*100),w=Math.min(100,stat.mean/max*100);
+ row.innerHTML=`<span class="lab" title="${label}">${label}</span><span class="track"><span class="fill" style="width:${w}%;background:${color}"></span><span class="whisk" style="left:${lo}%;width:${hi-lo}%"></span><span class="cap" style="left:${lo}%"></span><span class="cap" style="left:calc(${hi}% - 2px)"></span></span><span class="val">${f2(stat.mean)}${extra}</span>`;
+ bindTip(row,`<b>${label}</b><br>media ${f2(stat.mean)}<br>IC 95%: ${f2(stat.ci[0])} – ${f2(stat.ci[1])}<br>n = ${stat.n}`);return row}
+function legend(id,keys){document.getElementById(id).innerHTML=keys.map(k=>`<span><i style="background:${COL[k]||'var(--s1)'}"></i>${NAME[k]||k}</span>`).join('')}
+// 1 recuperación
+legend('leg1',['trad','graph_bm25','explorer_cold','explorer_deep']);
+const KINDS=[['commit','Tareas (commits)'],['symbol','Símbolos exactos'],['file','Nombres de archivo']];
+const ret=document.getElementById('retrieval');
+for(const [k,t] of KINDS){const p=document.createElement('div');p.className='panel';p.innerHTML=`<h3 style="margin-top:0">${t}</h3><div class="bars"></div>`;
+ const b=p.querySelector('.bars');
+ const ms=k==='commit'?['trad','graph_bm25','explorer_cold','explorer_deep']:['trad','graph_bm25','graph_name','explorer_cold'];
+ for(const m of ms){const r=S.retrieval[`${m}|${k}`];if(r)b.appendChild(bar(NAME[m],r.mrr,COL[m],1))}
+ ret.appendChild(p)}
+const tr=document.getElementById('t-ret');tr.innerHTML='<tr><th>método</th><th>tipo</th><th>n</th><th>acierta 1º</th><th>en top 5</th><th>recall@10</th><th>MRR</th><th>bytes/resp.</th></tr>';
+for(const k of ['commit','symbol','file'])for(const m of Object.keys(NAME)){const r=S.retrieval[`${m}|${k}`];if(r)tr.innerHTML+=`<tr><td>${NAME[m]}</td><td>${k}</td><td>${r.n}</td><td>${ci(r.hit1)}</td><td>${ci(r.hit5)}</td><td>${ci(r.recall10)}</td><td>${ci(r.mrr)}</td><td>${r.bytes}</td></tr>`}
+const tp=document.getElementById('t-pair');tp.innerHTML='<tr><th>comparación</th><th>tipo</th><th>n</th><th>gana / empata / pierde</th><th>Δ MRR [IC 95%]</th></tr>';
+for(const [key,v] of Object.entries(S.paired)){const [c,k]=key.split('|');if(k==='all')continue;const [a,b]=c.split(' vs ');const sig=v.ci[0]>0?'ok':v.ci[1]<0?'no':'';
+ tp.innerHTML+=`<tr><td>${NAME[a]} vs ${NAME[b]}</td><td>${k}</td><td>${v.n}</td><td>${v.win} / ${v.tie} / ${v.loss}</td><td class="${sig}">${v.meanDeltaMrr>=0?'+':''}${v.meanDeltaMrr.toFixed(2)} [${v.ci[0].toFixed(2)}, ${v.ci[1].toFixed(2)}]</td></tr>`}
+// 2 latencia
+const tl=document.getElementById('t-lat');tl.innerHTML='<tr><th>método</th><th>tareas</th><th>símbolos</th><th>archivos</th></tr>';
+for(const m of ['trad','graph_bm25','graph_name','explorer_cold','explorer_warm']){const g=k=>{const x=S.latency[`${m}|${k}`];return x?`${x.median} ms <span class="small">(p90 ${x.p90})</span>`:'—'};tl.innerHTML+=`<tr><td>${NAME[m]}</td><td>${g('commit')}</td><td>${g('symbol')}</td><td>${g('file')}</td></tr>`}
+// 3 caché
+const simE=Object.entries(S.cache);const avg=k=>simE.reduce((s,[,v])=>s+v[k],0)/simE.length;
+document.getElementById('sim').innerHTML=`<table><tr><td>Tasa de aciertos</td><td><b>${(avg('hitRate')*100).toFixed(1)}%</b></td></tr><tr><td>Mediana de un acierto</td><td>${Math.round(avg('medianHitMs'))} ms</td></tr><tr><td>Mediana de un fallo</td><td>${Math.round(avg('medianMissMs'))} ms</td></tr></table>`;
+const ti=document.getElementById('t-inv');const IL={edit_cited:'Se edita un archivo citado → deja de ser acierto',new_file:'Aparece un archivo que coincide → deja de ser acierto y se ve',unrelated_edit:'Se edita un archivo no citado → sigue siendo acierto',model_survives_new_file:'Respuesta de Haiku + archivo nuevo → sigue siendo acierto',model_expires_on_edit:'Respuesta de Haiku + se edita un archivo citado → caduca'};
+ti.innerHTML='<tr><th>prueba</th><th>correctas</th></tr>'+Object.entries(S.invalidation).map(([k,v])=>`<tr><td style="white-space:normal">${IL[k]}</td><td class="${v.ok===v.n?'ok':'no'}">${v.ok}/${v.n}</td></tr>`).join('');
+// 4 agentes
+const AK=['traditional','graph','explorer','explorer_cached'];const AN={traditional:'rg + fd + Read',graph:'grafo + Read',explorer:'explorer',explorer_cached:'explorer (caché caliente)'};const AC={traditional:'var(--s1)',graph:'var(--s2)',explorer:'var(--s3)',explorer_cached:'var(--s4)'};
+document.getElementById('leg2').innerHTML=AK.filter(a=>S.agents[a]).map(a=>`<span><i style="background:${AC[a]}"></i>${AN[a]}</span>`).join('');
+const ag=document.getElementById('agents');
+for(const [m,t] of [['mrr','MRR de la respuesta final'],['recall','Fracción de archivos correctos hallados'],['hit5','Algún correcto entre los 5 primeros']]){const p=document.createElement('div');p.className='panel';p.innerHTML=`<h3 style="margin-top:0">${t}</h3><div class="bars"></div>`;
+ for(const a of AK)if(S.agents[a])p.querySelector('.bars').appendChild(bar(AN[a],S.agents[a][m],AC[a],1));ag.appendChild(p)}
+const ta=document.getElementById('t-agent');ta.innerHTML='<tr><th>método</th><th>n</th><th>USD por tarea</th><th>turnos</th><th>llamadas a herramientas</th><th>segundos</th><th>USD total</th></tr>';
+for(const a of AK){const v=S.agents[a];if(!v)continue;ta.innerHTML+=`<tr><td>${AN[a]}</td><td>${v.n}${v.errors?` (${v.errors} con error)`:''}</td><td>$${v.usd.mean.toFixed(4)}</td><td>${v.turns.mean.toFixed(1)}</td><td>${v.toolCalls.mean.toFixed(1)}</td><td>${v.sec.mean.toFixed(0)}</td><td>$${v.totalUsd.toFixed(3)}</td></tr>`}
+
+// 5 reutilización
+const REU=S.reuse,RA=S.reuseAgents;
+if(REU){
+ const MA=[['trad','rg + fd','var(--s1)'],['graph_bm25','grafo (BM25)','var(--s2)'],['explorer_deep','explorer --deep','var(--s4)'],['reuse_graph','reuse (grafo)','var(--s3)'],['reuse_deep','reuse --deep','var(--s3)']];
+ document.getElementById('legA').innerHTML=MA.map(([k,l,c])=>'<span><i style="background:'+c+'"></i>'+l+'</span>').join('');
+ const ba=document.getElementById('reuseA');for(const [k,l,c] of MA){const r=REU.A[k];if(r)ba.appendChild(bar(l,r.recall,c,0.6))}
+ const ta2=document.getElementById('t-reuseA');ta2.innerHTML='<tr><th>método</th><th>recall@8</th><th>algún acierto</th><th>ms</th></tr>'+MA.map(([k,l])=>{const r=REU.A[k];return r?'<tr><td>'+l+'</td><td>'+ci(r.recall)+'</td><td>'+ci(r.any)+'</td><td>'+r.ms+'</td></tr>':''}).join('');
+ const PL={'reuse_deep vs trad':'reuse --deep vs rg + fd','reuse_deep vs graph_bm25':'reuse --deep vs grafo','reuse_deep vs explorer_deep':'reuse --deep vs explorer --deep','reuse_graph vs graph_bm25':'reuse (grafo) vs grafo','reuse_deep vs reuse_graph':'reuse --deep vs reuse (grafo)'};
+ ta2.innerHTML+='<tr><th colspan="4" style="padding-top:12px">Diferencias por pares (recall@8)</th></tr>'+Object.entries(REU.pairsA).filter(([k])=>PL[k]).map(([k,v])=>{const sig=v.ci[0]>0?'ok':v.ci[1]<0?'no':'';return '<tr><td colspan="2">'+PL[k]+'</td><td colspan="2" class="'+sig+'">'+(v.mean>=0?'+':'')+v.mean.toFixed(2)+' ['+v.ci[0].toFixed(2)+', '+v.ci[1].toFixed(2)+']</td></tr>'}).join('');
+ const LB={rename:'Solo renombrado',noise:'Renombrado + líneas añadidas',prune:'Renombrado + añadidas + 25% de líneas borradas',foreign:'Control negativo (función de otro repo)'};
+ const pcn=s=>Math.round(s.mean*100)+'% <span class="small">('+Math.round(s.ci[0]*100)+'–'+Math.round(s.ci[1]*100)+')</span>';
+ document.getElementById('t-reuseB').innerHTML='<tr><th>disfraz</th><th>n</th><th>marcó el código nuevo</th><th>halló el original</th><th>lo etiquetó duplicado (≥0.6)</th><th>similitud mediana</th></tr>'+Object.entries(REU.B).map(([k,v])=>'<tr><td style="white-space:normal">'+LB[k]+'</td><td>'+v.n+'</td><td class="'+(k==='foreign'?(v.flagged.mean<0.1?'ok':'no'):'')+'">'+pcn(v.flagged)+'</td><td>'+pcn(v.foundOriginal)+'</td><td>'+pcn(v.duplicate)+'</td><td>'+(k==='foreign'?'—':v.medianJaccard.toFixed(2))+'</td></tr>').join('');
+}
+if(RA){
+ const OC=[['reutilizó','var(--good)'],['duplicó','var(--bad)'],['independiente','var(--ink3)'],['nada','var(--line)']];
+ const AL={plain:'Sin guía',guided:'Con reglas de reutilización'};
+ document.getElementById('reuseC').innerHTML=OC.slice(0,3).map(([o,c])=>'<span class="legend" style="display:inline-flex;margin-right:14px"><span><i style="background:'+c+'"></i>'+o+'</span></span>').join('')+Object.entries(RA.arms).map(([arm,v])=>'<div style="margin-top:12px"><div class="small">'+AL[arm]+' · n = '+v.n+'</div><div style="display:flex;height:22px;border-radius:3px;overflow:hidden;gap:2px;margin-top:4px">'+OC.map(([o,c])=>{const n=v.counts[o]||0;return n?'<div title="'+o+': '+n+'" style="flex:'+n+';background:'+c+';color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center">'+n+'</div>':''}).join('')+'</div></div>').join('');
+ const tc=document.getElementById('t-reuseC');tc.innerHTML='<tr><th></th><th>sin guía</th><th>con reglas</th></tr>';
+ const A1=RA.arms.plain,A2=RA.arms.guided;
+ if(A1&&A2){const row=(l,a,b)=>'<tr><td>'+l+'</td><td>'+a+'</td><td>'+b+'</td></tr>';
+  tc.innerHTML+=row('Reutilizó',pcn(A1.reused),pcn(A2.reused))+row('Escribió un duplicado',pcn(A1.duplicated),pcn(A2.duplicated))+row('USD por tarea','$'+A1.usd.toFixed(4),'$'+A2.usd.toFixed(4))+row('Turnos',A1.turns.toFixed(1),A2.turns.toFixed(1))+row('Segundos',A1.sec.toFixed(0),A2.sec.toFixed(0))+row('Usó explore --reuse / reuse-check',A1.usedExplore+' / '+A1.usedCheck,A2.usedExplore+' / '+A2.usedCheck)
+   +'<tr><td>Cambio pareado en "reutilizó"</td><td colspan="2" class="ok">+'+Math.round(RA.paired.reusedDelta.mean*100)+' pts ['+Math.round(RA.paired.reusedDelta.ci[0]*100)+', '+Math.round(RA.paired.reusedDelta.ci[1]*100)+']</td></tr>'
+   +'<tr><td>Cambio pareado en "duplicó"</td><td colspan="2">'+Math.round(RA.paired.duplicatedDelta.mean*100)+' pts ['+Math.round(RA.paired.duplicatedDelta.ci[0]*100)+', '+Math.round(RA.paired.duplicatedDelta.ci[1]*100)+']</td></tr>'}
+}
+</script>

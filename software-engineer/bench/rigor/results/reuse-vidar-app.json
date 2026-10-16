@@ -1,0 +1,1081 @@
+{
+ "project": "vidar-app",
+ "rowsA": [
+  {
+   "id": "vidar-app:reuse:24",
+   "method": "trad",
+   "ms": 375,
+   "recall": 0.5,
+   "any": 1,
+   "mrr": 0.125,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:24",
+   "method": "graph_bm25",
+   "ms": 39,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:24",
+   "method": "explorer_deep",
+   "ms": 6271,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 7
+  },
+  {
+   "id": "vidar-app:reuse:24",
+   "method": "reuse_graph",
+   "ms": 1479,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 3
+  },
+  {
+   "id": "vidar-app:reuse:24",
+   "method": "reuse_deep",
+   "ms": 7760,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 2
+  },
+  {
+   "id": "vidar-app:reuse:25",
+   "method": "trad",
+   "ms": 272,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:25",
+   "method": "graph_bm25",
+   "ms": 23,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:25",
+   "method": "explorer_deep",
+   "ms": 9868,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:25",
+   "method": "reuse_graph",
+   "ms": 1581,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 3
+  },
+  {
+   "id": "vidar-app:reuse:25",
+   "method": "reuse_deep",
+   "ms": 12551,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 0
+  },
+  {
+   "id": "vidar-app:reuse:26",
+   "method": "trad",
+   "ms": 176,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:26",
+   "method": "graph_bm25",
+   "ms": 59,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 7
+  },
+  {
+   "id": "vidar-app:reuse:26",
+   "method": "explorer_deep",
+   "ms": 8144,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:26",
+   "method": "reuse_graph",
+   "ms": 1514,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 1
+  },
+  {
+   "id": "vidar-app:reuse:26",
+   "method": "reuse_deep",
+   "ms": 14888,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 6
+  },
+  {
+   "id": "vidar-app:reuse:27",
+   "method": "trad",
+   "ms": 359,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:27",
+   "method": "graph_bm25",
+   "ms": 45,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:27",
+   "method": "explorer_deep",
+   "ms": 9343,
+   "recall": 1,
+   "any": 1,
+   "mrr": 0.3333333333333333,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:27",
+   "method": "reuse_graph",
+   "ms": 1463,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 5
+  },
+  {
+   "id": "vidar-app:reuse:27",
+   "method": "reuse_deep",
+   "ms": 11777,
+   "recall": 1,
+   "any": 1,
+   "mrr": 1,
+   "n": 5
+  },
+  {
+   "id": "vidar-app:reuse:28",
+   "method": "trad",
+   "ms": 246,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:28",
+   "method": "graph_bm25",
+   "ms": 45,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:28",
+   "method": "explorer_deep",
+   "ms": 10284,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:28",
+   "method": "reuse_graph",
+   "ms": 1547,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 7
+  },
+  {
+   "id": "vidar-app:reuse:28",
+   "method": "reuse_deep",
+   "ms": 9811,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 5
+  },
+  {
+   "id": "vidar-app:reuse:29",
+   "method": "trad",
+   "ms": 336,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:29",
+   "method": "graph_bm25",
+   "ms": 15,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:29",
+   "method": "explorer_deep",
+   "ms": 9067,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:29",
+   "method": "reuse_graph",
+   "ms": 1558,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 5
+  },
+  {
+   "id": "vidar-app:reuse:29",
+   "method": "reuse_deep",
+   "ms": 12428,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 5
+  },
+  {
+   "id": "vidar-app:reuse:30",
+   "method": "trad",
+   "ms": 351,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:30",
+   "method": "graph_bm25",
+   "ms": 50,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:30",
+   "method": "explorer_deep",
+   "ms": 13650,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:30",
+   "method": "reuse_graph",
+   "ms": 1522,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 2
+  },
+  {
+   "id": "vidar-app:reuse:30",
+   "method": "reuse_deep",
+   "ms": 19595,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 6
+  },
+  {
+   "id": "vidar-app:reuse:31",
+   "method": "trad",
+   "ms": 379,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:31",
+   "method": "graph_bm25",
+   "ms": 48,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 6
+  },
+  {
+   "id": "vidar-app:reuse:31",
+   "method": "explorer_deep",
+   "ms": 11274,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:31",
+   "method": "reuse_graph",
+   "ms": 1506,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 1
+  },
+  {
+   "id": "vidar-app:reuse:31",
+   "method": "reuse_deep",
+   "ms": 15122,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 7
+  },
+  {
+   "id": "vidar-app:reuse:32",
+   "method": "trad",
+   "ms": 379,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:32",
+   "method": "graph_bm25",
+   "ms": 46,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:32",
+   "method": "explorer_deep",
+   "ms": 11640,
+   "recall": 1,
+   "any": 1,
+   "mrr": 0.16666666666666666,
+   "n": 6
+  },
+  {
+   "id": "vidar-app:reuse:32",
+   "method": "reuse_graph",
+   "ms": 1517,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 5
+  },
+  {
+   "id": "vidar-app:reuse:32",
+   "method": "reuse_deep",
+   "ms": 14754,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 5
+  },
+  {
+   "id": "vidar-app:reuse:33",
+   "method": "trad",
+   "ms": 378,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:33",
+   "method": "graph_bm25",
+   "ms": 48,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:33",
+   "method": "explorer_deep",
+   "ms": 12555,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:33",
+   "method": "reuse_graph",
+   "ms": 1529,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 7
+  },
+  {
+   "id": "vidar-app:reuse:33",
+   "method": "reuse_deep",
+   "ms": 16478,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:34",
+   "method": "trad",
+   "ms": 254,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:34",
+   "method": "graph_bm25",
+   "ms": 47,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:34",
+   "method": "explorer_deep",
+   "ms": 11327,
+   "recall": 0.3333333333333333,
+   "any": 1,
+   "mrr": 1,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:34",
+   "method": "reuse_graph",
+   "ms": 1824,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 6
+  },
+  {
+   "id": "vidar-app:reuse:34",
+   "method": "reuse_deep",
+   "ms": 13838,
+   "recall": 0.3333333333333333,
+   "any": 1,
+   "mrr": 1,
+   "n": 5
+  },
+  {
+   "id": "vidar-app:reuse:35",
+   "method": "trad",
+   "ms": 350,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:35",
+   "method": "graph_bm25",
+   "ms": 52,
+   "recall": 0.25,
+   "any": 1,
+   "mrr": 0.125,
+   "n": 8
+  },
+  {
+   "id": "vidar-app:reuse:35",
+   "method": "explorer_deep",
+   "ms": 12303,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 5
+  },
+  {
+   "id": "vidar-app:reuse:35",
+   "method": "reuse_graph",
+   "ms": 1769,
+   "recall": 0.25,
+   "any": 1,
+   "mrr": 0.5,
+   "n": 3
+  },
+  {
+   "id": "vidar-app:reuse:35",
+   "method": "reuse_deep",
+   "ms": 12881,
+   "recall": 0.25,
+   "any": 1,
+   "mrr": 0.3333333333333333,
+   "n": 3
+  }
+ ],
+ "rowsB": [
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "resolveSchedule",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "resolveSchedule",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.92,
+   "topJaccard": 0.92,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "resolveSchedule",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.82,
+   "topJaccard": 0.82,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "getLastBodyweight",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "getLastBodyweight",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.82,
+   "topJaccard": 0.82,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "getLastBodyweight",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 0,
+   "jaccard": 0.54,
+   "topJaccard": 0.54,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "buildCoachSystemPrompt",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "buildCoachSystemPrompt",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 0,
+   "jaccard": 0.47,
+   "topJaccard": 0.47,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "buildCoachSystemPrompt",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 0,
+   "jaccard": 0.59,
+   "topJaccard": 0.59,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "finishSession",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "finishSession",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.89,
+   "topJaccard": 0.89,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "finishSession",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.89,
+   "topJaccard": 0.89,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "disableUser",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "disableUser",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.91,
+   "topJaccard": 0.91,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "disableUser",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "workoutsToRatedSets",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.72,
+   "topJaccard": 0.72,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "workoutsToRatedSets",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.62,
+   "topJaccard": 0.62,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "workoutsToRatedSets",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.68,
+   "topJaccard": 0.68,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "effortSummary",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.78,
+   "topJaccard": 0.78,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "effortSummary",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.7,
+   "topJaccard": 0.7,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "effortSummary",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.64,
+   "topJaccard": 0.64,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "activityHeatmap",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "activityHeatmap",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.96,
+   "topJaccard": 0.96,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "activityHeatmap",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.82,
+   "topJaccard": 0.82,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "decodeExerciseCursor",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "decodeExerciseCursor",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.69,
+   "topJaccard": 0.69,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "decodeExerciseCursor",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 0,
+   "jaccard": 0.35,
+   "topJaccard": 0.35,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "RoutineIconPicker",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "RoutineIconPicker",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.85,
+   "topJaccard": 0.85,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "RoutineIconPicker",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.84,
+   "topJaccard": 0.84,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "reasonText",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "reasonText",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.77,
+   "topJaccard": 0.77,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "reasonText",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.77,
+   "topJaccard": 0.77,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "useAdminRole",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "useAdminRole",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.86,
+   "topJaccard": 0.86,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "useAdminRole",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.89,
+   "topJaccard": 0.89,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "summarizeStaff",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "parseTicketCount",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "Avatar",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "PlanTierChip",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "StatusFilterChipGroup",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "StatTileRow",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "nextEnrollmentPoll",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "shouldPauseAfterPoll",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "createWindowsEventLogNotifier",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "resolveDataPath",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "checkIdentityMapReadiness",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "describePollFallback",
+   "flagged": 1,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0.35,
+   "scanned": 1
+  }
+ ],
+ "index": {
+  "project": "harness-5e1d673e",
+  "nodes": 13469,
+  "edges": 34411,
+  "ms": 1774
+ }
+}

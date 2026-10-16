@@ -1,0 +1,466 @@
+{
+ "generated": "2026-10-10",
+ "cases": [
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "reuse",
+   "query": "define cash expense rules and durable intent ports",
+   "truth": [
+    "src/domain/expenses/OneOffExpense.ts"
+   ],
+   "commit": "4161b5a2",
+   "id": "gym-app:reuse:0"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "reuse",
+   "query": "implementar request/unrequest/findQueued contra Postgres real",
+   "truth": [
+    "src/domain/member/BiometricMethod.ts"
+   ],
+   "commit": "1b252a1f",
+   "id": "gym-app:reuse:1"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "reuse",
+   "query": "capa IndexedDB con membresia, perfil y QR offline",
+   "truth": [
+    "src/components/molecules/MembershipStatusCard.tsx",
+    "src/components/organisms/QrDisplay.tsx",
+    "src/lib/memberPwa/formatMembershipStatus.ts"
+   ],
+   "commit": "4c60f471",
+   "id": "gym-app:reuse:2"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "reuse",
+   "query": "endpoint de identidades de socios para el bridge",
+   "truth": [
+    "src/infrastructure/auth/bridgeAuth.ts"
+   ],
+   "commit": "830946d4",
+   "id": "gym-app:reuse:3"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "reuse",
+   "query": "quien esta firmado, arriba del boton de cerrar sesion",
+   "truth": [
+    "src/components/atoms/Avatar.tsx",
+    "src/lib/utils.ts",
+    "src/domain/auth/User.ts"
+   ],
+   "commit": "00ba48f0",
+   "id": "gym-app:reuse:4"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "reuse",
+   "query": "add membership assignment and member registration",
+   "truth": [
+    "src/components/atoms/Input.tsx",
+    "src/lib/apiClient.ts",
+    "src/components/organisms/AssignMembershipForm.tsx"
+   ],
+   "commit": "88c93812",
+   "id": "gym-app:reuse:5"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "reuse",
+   "query": "add role-aware expenses and explicit cash declaration",
+   "truth": [
+    "src/components/organisms/OneOffExpensesList.tsx",
+    "src/domain/expenses/OneOffExpense.ts",
+    "src/lib/apiClient.ts"
+   ],
+   "commit": "d68ca9d2",
+   "id": "gym-app:reuse:6"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "reuse",
+   "query": "grabar los flujos en video y embeberlos en el manual",
+   "truth": [
+    "Docs/manual/loadPlaywright.mjs"
+   ],
+   "commit": "d853c7ff",
+   "id": "gym-app:reuse:7"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "reuse",
+   "query": "cola offline de sesiones de entrenamiento",
+   "truth": [
+    "src/components/providers/MemberOfflineProvider.tsx",
+    "src/lib/memberPwa/memberDb.ts"
+   ],
+   "commit": "e01c5c94",
+   "id": "gym-app:reuse:8"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "reuse",
+   "query": "enrolamientos biometricos y acceso del bridge al cache",
+   "truth": [
+    "src/infrastructure/auth/bridgeAuth.ts",
+    "src/domain/member/BiometricMethod.ts"
+   ],
+   "commit": "5cd53159",
+   "id": "gym-app:reuse:9"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "reuse",
+   "query": "mostrar la fecha de vencimiento sobre el conteo de días",
+   "truth": [
+    "src/lib/format/date.ts",
+    "src/domain/membership/membershipPeriod.ts"
+   ],
+   "commit": "d7ce496e",
+   "id": "gym-app:reuse:10"
+  },
+  {
+   "project": "gym-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/gym-app",
+   "graphProject": "bench-gym-app",
+   "kind": "reuse",
+   "query": "bloquear renovacion y reservas sin conexion + ADR-059 y ADR-061",
+   "truth": [
+    "src/components/providers/MemberOfflineProvider.tsx"
+   ],
+   "commit": "d62f6eb4",
+   "id": "gym-app:reuse:11"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "reuse",
+   "query": "linkear las identidades de empleados heredados por accessCode",
+   "truth": [
+    "src/domain/access/accessCodeNamespace.ts"
+   ],
+   "commit": "4f1e280d",
+   "id": "bridge-gym:reuse:12"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "reuse",
+   "query": "fotografiar los permisos antes de escribirlos",
+   "truth": [
+    "src/infrastructure/config/env.ts",
+    "src/infrastructure/isapi/HikvisionAdapter.ts"
+   ],
+   "commit": "6d248a56",
+   "id": "bridge-gym:reuse:13"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "reuse",
+   "query": "el bucle deja de girar contra un gym-app que no sostiene el request",
+   "truth": [
+    "src/application/enrollmentPollPlan.ts"
+   ],
+   "commit": "721c1366",
+   "id": "bridge-gym:reuse:14"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "reuse",
+   "query": "empujar permisos de empleados y registrar su asistencia",
+   "truth": [
+    "src/domain/access/errors.ts"
+   ],
+   "commit": "6e0e82d5",
+   "id": "bridge-gym:reuse:15"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "reuse",
+   "query": "no reportar un rechazo del device como si fuera un ingreso",
+   "truth": [
+    "src/sandbox/FakeHikvisionDevice.ts"
+   ],
+   "commit": "06d5b676",
+   "id": "bridge-gym:reuse:16"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "reuse",
+   "query": "un nonce, un uso — challenge fresco por escritura",
+   "truth": [
+    "src/infrastructure/isapi/digestFetch.ts"
+   ],
+   "commit": "c697cd25",
+   "id": "bridge-gym:reuse:17"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "reuse",
+   "query": "watchdog de salud que solo reporta",
+   "truth": [
+    "src/infrastructure/logging/RotatingFileLog.ts",
+    "src/infrastructure/network/listenerHost.ts"
+   ],
+   "commit": "80d92512",
+   "id": "bridge-gym:reuse:18"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "reuse",
+   "query": "que una ruta relativa no pueda abrir dos bases en silencio",
+   "truth": [
+    "src/infrastructure/persistence/resolveDataPath.ts"
+   ],
+   "commit": "96f4e543",
+   "id": "bridge-gym:reuse:19"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "reuse",
+   "query": "el bridge pregunta por las aperturas autorizadas",
+   "truth": [
+    "src/domain/door/IDoorPulsePort.ts",
+    "src/domain/door/types.ts"
+   ],
+   "commit": "3a59da2c",
+   "id": "bridge-gym:reuse:20"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "reuse",
+   "query": "the audit cycle reports what it only reports",
+   "truth": [
+    "src/domain/device/permissionDrift.ts"
+   ],
+   "commit": "58d00ca2",
+   "id": "bridge-gym:reuse:21"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "reuse",
+   "query": "one device failing does not skip the rest, and a classifier crash is unreadable",
+   "truth": [
+    "src/domain/access/accessCodeNamespace.ts"
+   ],
+   "commit": "5e8b4b96",
+   "id": "bridge-gym:reuse:22"
+  },
+  {
+   "project": "bridge-gym",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/bridge-gym",
+   "graphProject": "bench-bridge-gym",
+   "kind": "reuse",
+   "query": "el proceso escribe y rota su propio log",
+   "truth": [
+    "src/infrastructure/config/env.ts"
+   ],
+   "commit": "a67d84d3",
+   "id": "bridge-gym:reuse:23"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "reuse",
+   "query": "cache gym membership for five minutes",
+   "truth": [
+    "apps/api/src/shared/clock/clock.port.ts",
+    "apps/api/src/modules/gym/domain/gym-app-client.port.ts"
+   ],
+   "commit": "6487ef36",
+   "id": "vidar-app:reuse:24"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "reuse",
+   "query": "transactional record recompute, sync index, muscle load window, import name reuse and pdf escaping",
+   "truth": [
+    "apps/api/src/modules/stats/domain/date-window.ts"
+   ],
+   "commit": "abbd6dd7",
+   "id": "vidar-app:reuse:25"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "reuse",
+   "query": "scaffold expo mobile app",
+   "truth": [
+    "eslint.config.mjs"
+   ],
+   "commit": "f44f588f",
+   "id": "vidar-app:reuse:26"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "reuse",
+   "query": "remove accent color picker from settings",
+   "truth": [
+    "apps/app/src/lib/format.js"
+   ],
+   "commit": "e94be98c",
+   "id": "vidar-app:reuse:27"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "reuse",
+   "query": "skip deletion retry job in tests and add import fault seam",
+   "truth": [
+    "apps/api/src/shared/config/config.service.ts"
+   ],
+   "commit": "bce8352e",
+   "id": "vidar-app:reuse:28"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "reuse",
+   "query": "foundations with fastify, jwks auth, sse, upload and openapi",
+   "truth": [
+    "apps/api/src/shared/config/config.service.ts",
+    "apps/api/src/shared/config/env.schema.ts"
+   ],
+   "commit": "7a0b9fba",
+   "id": "vidar-app:reuse:29"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "reuse",
+   "query": "exercise library, custom exercises and offline outbox",
+   "truth": [
+    "apps/mobile/src/shared/api/identity.ts",
+    "apps/mobile/src/shared/api/queryClient.ts",
+    "apps/mobile/src/shared/api/client.ts"
+   ],
+   "commit": "0154970a",
+   "id": "vidar-app:reuse:30"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "reuse",
+   "query": "coach review evidence, change validation and application",
+   "truth": [
+    "packages/domain/src/plan/index.ts",
+    "packages/domain/src/progression/index.ts",
+    "packages/domain/src/stats/index.ts",
+    "packages/domain/src/exercises/normalize-muscles.ts"
+   ],
+   "commit": "f5b2d6fb",
+   "id": "vidar-app:reuse:31"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "reuse",
+   "query": "full entity payloads in sync and soft-deleted custom exercises",
+   "truth": [
+    "apps/api/src/modules/workouts/infrastructure/workout-rows.ts"
+   ],
+   "commit": "18b9569f",
+   "id": "vidar-app:reuse:32"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "reuse",
+   "query": "plan timezone, units, conflict status and superset extension",
+   "truth": [
+    "apps/mobile/src/shared/api/identity.ts",
+    "apps/mobile/src/shared/api/queryClient.ts",
+    "apps/mobile/src/shared/db/routines-store.ts",
+    "apps/mobile/src/shared/db/sync.ts"
+   ],
+   "commit": "a24abf00",
+   "id": "vidar-app:reuse:33"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "reuse",
+   "query": "rebrand to VidarGym and make the web shell local-only",
+   "truth": [
+    "apps/app/src/store/useStore.js",
+    "apps/app/src/lib/api.js",
+    "apps/app/src/sheets.jsx"
+   ],
+   "commit": "b9ed274f",
+   "id": "vidar-app:reuse:34"
+  },
+  {
+   "project": "vidar-app",
+   "repo": "/Users/ebedoya/Projects/Gym Suit/vidar-app",
+   "graphProject": "bench-vidar-app",
+   "kind": "reuse",
+   "query": "no api calls without session and local mode on web",
+   "truth": [
+    "apps/mobile/src/shared/auth/index.tsx",
+    "apps/mobile/src/shared/db/routines-store.ts",
+    "apps/mobile/src/shared/db/schedule-overrides-store.ts",
+    "apps/mobile/src/shared/db/week-plan-store.ts"
+   ],
+   "commit": "96a4c165",
+   "id": "vidar-app:reuse:35"
+  }
+ ]
+}

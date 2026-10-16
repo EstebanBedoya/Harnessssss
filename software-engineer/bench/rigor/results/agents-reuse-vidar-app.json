@@ -1,0 +1,550 @@
+{
+ "project": "vidar-app",
+ "model": "claude-haiku-5-5",
+ "intents": [
+  {
+   "name": "applyChanges",
+   "intent": "I need a function that takes a coaching plan and a list of proposed changes, applies each change to a copy of the plan in order, and returns the updated plan without modifying the original.",
+   "usedBy": 3
+  },
+  {
+   "name": "toContractCoachJob",
+   "intent": "I need a function that maps a coach job record or view to a contract-shaped object containing its id, kind, state, error class, instruction, iteration, usage, creation time, and proposal ID, along with the embedded proposal (converted to its contract form) only when the job is a succeeded create or refine job, otherwise null.",
+   "usedBy": 3
+  },
+  {
+   "name": "apiFetch",
+   "intent": "I need a function that performs an authenticated HTTP request to a given API path, attaching a bearer token from the active session, setting a JSON content type unless the body is multipart form data, throwing a structured error with the status and parsed error message on failure (and triggering an unauthorized handler on 401), and returning the raw response on success.",
+   "usedBy": 56
+  },
+  {
+   "name": "toDomainUser",
+   "intent": "I need a function that takes a database row for a user and converts it into a domain user object, mapping the identifier, auth provider ID, email, and optional profile fields while turning null values into undefined, defaulting the role to a regular user when none is set, and converting the disabled-at timestamp into an ISO string when present.",
+   "usedBy": 3
+  },
+  {
+   "name": "normalizeDate",
+   "intent": "I need a function that takes a date string, trims surrounding whitespace, and returns it unchanged if it is a valid calendar date, otherwise parses slash- or dash-separated dates written as either year-first (YYYY/MM/DD) or day-first (DD/MM/YYYY), zero-pads the month and day, and returns the result as an ISO date string, or null if the input cannot be interpreted as a valid date.",
+   "usedBy": 3
+  },
+  {
+   "name": "matchExerciseName",
+   "intent": "I need a function that takes a source exercise name, a catalog of exercises, a list of custom exercises, and a map of alias names to target IDs, then returns the matching exercise reference ID with a confidence level of \"exact\" when found by name in the catalog or customs, \"alias\" when found through the alias map, or \"none\" with a null reference when no match exists, comparing names after normalization.",
+   "usedBy": 3
+  },
+  {
+   "name": "pullChanges",
+   "intent": "I need a function that pulls all pending remote changes page by page from a sync endpoint, applies each upsert or removal to the matching local store while skipping unknown entity types, and then saves the latest sync cursor so the next pull resumes from where this one stopped, taking no inputs and returning nothing.",
+   "usedBy": 4
+  },
+  {
+   "name": "finishSession",
+   "intent": "I need a function that takes an active workout session, the current time, and a history of past sessions keyed by exercise, and returns either a failure if no sets were completed or a finished workout summary containing the start and end timestamps, duration in seconds, total weight-times-reps volume for reps-based exercises (excluding warmup sets), the completed exercises, and any personal records detected for each.",
+   "usedBy": 3
+  }
+ ],
+ "rows": [
+  {
+   "id": "vidar-app:0",
+   "arm": "plain",
+   "target": "applyChanges",
+   "usedBy": 3,
+   "outcome": "reutilizó",
+   "importsOriginal": true,
+   "dupOfOriginal": false,
+   "lines": 3,
+   "ms": 18638,
+   "usd": 0.00570689,
+   "turns": 9,
+   "tools": [
+    "Bash",
+    "Bash",
+    "Bash",
+    "Bash",
+    "Bash",
+    "Write",
+    "Bash",
+    "Bash"
+   ],
+   "commands": [
+    "ls apps/api/src/modules/coach/ 2>/dev/null && find apps/api/src/modules/coach -type f | he",
+    "ls apps/api/src/modules/coach/interface && ls apps/api/src/modules/coach/domain && grep -r",
+    "cat apps/api/src/modules/coach/domain/coach-proposal.ts && grep -rn \"plan\" -i apps/api/src",
+    "ls packages/domain/src/coach/ && cat packages/domain/src/coach/types.ts && cat packages/do",
+    "cat packages/domain/src/coach/apply-changes.ts && grep -n \"coach\" packages/domain/src/inde",
+    "cd /private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-xBYioq/apps/api &",
+    "cat packages/domain/src/coach/index.ts"
+   ],
+   "error": ""
+  },
+  {
+   "id": "vidar-app:0",
+   "arm": "guided",
+   "target": "applyChanges",
+   "usedBy": 3,
+   "outcome": "reutilizó",
+   "importsOriginal": true,
+   "dupOfOriginal": false,
+   "lines": 4,
+   "ms": 15183,
+   "usd": 0.0032183199999999998,
+   "turns": 6,
+   "tools": [
+    "Bash",
+    "Bash",
+    "Bash",
+    "Write",
+    "Bash"
+   ],
+   "commands": [
+    "node harness explore --reuse \"apply ordered list of proposed changes to a copy of a coachi",
+    "ls /private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-xBYioq/apps/api/s",
+    "cat packages/domain/src/coach/apply-changes.ts && echo ---- && git grep -n \"@.*domain\" -- ",
+    "node harness reuse-check"
+   ],
+   "error": ""
+  },
+  {
+   "id": "vidar-app:1",
+   "arm": "guided",
+   "target": "toContractCoachJob",
+   "usedBy": 3,
+   "outcome": "reutilizó",
+   "importsOriginal": true,
+   "dupOfOriginal": false,
+   "lines": 113,
+   "ms": 35207,
+   "usd": 0.0069031200000000004,
+   "turns": 11,
+   "tools": [
+    "Bash",
+    "Bash",
+    "Bash",
+    "Bash",
+    "Bash",
+    "Bash",
+    "Write",
+    "Bash",
+    "Bash",
+    "Bash"
+   ],
+   "commands": [
+    "node harness explore --reuse \"map coach job record to contract-shaped object with id, kind",
+    "cat apps/api/src/modules/coach/interface/coach.mapper.ts && ls packages/domain/src/coach 2",
+    "cat packages/domain/src/coach/index.ts && grep -n \"export\" packages/domain/src/coach/types",
+    "grep -rln \"CoachJob\" packages/contracts/src | head; grep -rn \"export.*CoachJob\\b\\|export.*",
+    "cat apps/api/src/modules/coach/domain/coach-job.ts apps/api/src/modules/coach/domain/coach",
+    "grep -rn \"export.*NormalizedRoutine\\b\" packages/domain/src | head -3; sed -n 1,12p package",
+    "node harness reuse-check; echo \"---\"; cd packages/domain && npx tsc -p tsconfig.json --noE",
+    "node harness reuse-check",
+    "cd /private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-xBYioq/packages/d"
+   ],
+   "error": ""
+  },
+  {
+   "id": "vidar-app:1",
+   "arm": "plain",
+   "target": "toContractCoachJob",
+   "usedBy": 3,
+   "outcome": "independiente",
+   "importsOriginal": false,
+   "dupOfOriginal": false,
+   "lines": 72,
+   "ms": 27573,
+   "usd": 0.007563350000000001,
+   "turns": 12,
+   "tools": [
+    "Bash",
+    "Bash",
+    "Grep",
+    "Bash",
+    "Bash",
+    "Bash",
+    "Bash",
+    "Write",
+    "Bash",
+    "Bash",
+    "Bash"
+   ],
+   "commands": [
+    "ls packages/domain/src/coach/ 2>/dev/null; ls packages/domain/src | head -50; grep -ril \"c",
+    "cat packages/domain/src/coach/types.ts packages/domain/src/coach/index.ts; grep -rniE \"coa",
+    "cat packages/contracts/src/coach.ts; cat apps/api/src/modules/coach/interface/coach.mapper",
+    "cat packages/domain/package.json; cat apps/api/src/modules/coach/domain/coach-proposal.ts;",
+    "grep -rn \"export.*NormalizedRoutine\" packages/domain/src | head -3",
+    "grep -n \"NormalizedRoutine\\b\" packages/domain/src/plan/validate-routine.ts | head -3",
+    "cd /private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-xBYioq/packages/d",
+    "cd /private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-xBYioq/packages/d",
+    "npx --prefix /private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-xBYioq/"
+   ],
+   "error": ""
+  },
+  {
+   "id": "vidar-app:2",
+   "arm": "plain",
+   "target": "apiFetch",
+   "usedBy": 56,
+   "outcome": "independiente",
+   "importsOriginal": false,
+   "dupOfOriginal": false,
+   "lines": 75,
+   "ms": 17122,
+   "usd": 0.00343608,
+   "turns": 5,
+   "tools": [
+    "Bash",
+    "Bash",
+    "Bash",
+    "Write"
+   ],
+   "commands": [
+    "ls packages/domain/src packages/domain/src/coach 2>&1; grep -rniE \"bearer|unauthorized|onU",
+    "grep -rniE \"bearer|onUnauthorized|unauthorized|getSession|accessToken|multipart|FormData\" ",
+    "cat apps/mobile/src/shared/api/client.ts 2>/dev/null | head -120; git status --short"
+   ],
+   "error": ""
+  },
+  {
+   "id": "vidar-app:2",
+   "arm": "guided",
+   "target": "apiFetch",
+   "usedBy": 56,
+   "outcome": "duplicó",
+   "importsOriginal": true,
+   "dupOfOriginal": true,
+   "lines": 78,
+   "ms": 28962,
+   "usd": 0.00529267,
+   "turns": 10,
+   "tools": [
+    "Bash",
+    "Read",
+    "Bash",
+    "Bash",
+    "Write",
+    "Bash",
+    "Bash",
+    "Bash",
+    "Bash"
+   ],
+   "commands": [
+    "node harness explore --reuse \"authenticated HTTP request helper to API path with bearer to",
+    "ls packages/domain/src/coach 2>/dev/null; ls packages/domain/src 2>/dev/null; git rev-pars",
+    "grep -rln \"fetch(\" packages/domain/src | head; grep -rn \"from '@vidar/\" packages/domain/sr",
+    "node harness reuse-check; echo \"exit=$?\"",
+    "node harness reuse-check",
+    "cd /private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-xBYioq/packages/d",
+    "cd /private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-xBYioq/packages/d"
+   ],
+   "error": ""
+  },
+  {
+   "id": "vidar-app:3",
+   "arm": "guided",
+   "target": "toDomainUser",
+   "usedBy": 3,
+   "outcome": "duplicó",
+   "importsOriginal": true,
+   "dupOfOriginal": true,
+   "lines": 42,
+   "ms": 24987,
+   "usd": 0.0038394600000000003,
+   "turns": 8,
+   "tools": [
+    "Bash",
+    "Bash",
+    "Bash",
+    "Write",
+    "Bash",
+    "Bash",
+    "Bash"
+   ],
+   "commands": [
+    "node harness explore --reuse \"map database user row to domain user object converting null ",
+    "cat apps/api/src/modules/identity/infrastructure/persistence/user.mapper.ts && echo ---- &",
+    "grep -rn \"authProviderId\\|interface User\\b\\|type User\\b\" packages/domain/src | head; echo ",
+    "node harness reuse-check",
+    "cd /private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-xBYioq/packages/d",
+    "cd /private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-xBYioq/packages/d"
+   ],
+   "error": ""
+  },
+  {
+   "id": "vidar-app:3",
+   "arm": "plain",
+   "target": "toDomainUser",
+   "usedBy": 3,
+   "outcome": "independiente",
+   "importsOriginal": false,
+   "dupOfOriginal": false,
+   "lines": 47,
+   "ms": 15396,
+   "usd": 0.00306982,
+   "turns": 6,
+   "tools": [
+    "Bash",
+    "Bash",
+    "Bash",
+    "Bash",
+    "Write"
+   ],
+   "commands": [
+    "ls packages/domain/src 2>/dev/null; ls packages/domain/src/coach 2>/dev/null; grep -rn \"di",
+    "grep -rln -i \"disabled_at\\|disabledAt\\|authProvider\\|auth_provider\\|role\" packages --exclu",
+    "cat packages/contracts/src/identity.ts | head -120; grep -n \"role\\|Role\" packages/contract",
+    "grep -rn \"auth_provider\\|authProviderId\\|disabled_at\\|disabledAt\" --exclude-dir=node_modul"
+   ],
+   "error": ""
+  },
+  {
+   "id": "vidar-app:4",
+   "arm": "plain",
+   "target": "normalizeDate",
+   "usedBy": 3,
+   "outcome": "reutilizó",
+   "importsOriginal": true,
+   "dupOfOriginal": false,
+   "lines": 51,
+   "ms": 15175,
+   "usd": 0.0023285700000000003,
+   "turns": 5,
+   "tools": [
+    "Bash",
+    "Write",
+    "Bash",
+    "Bash"
+   ],
+   "commands": [
+    "ls packages/domain/src/ && ls packages/domain/src/coach/ 2>/dev/null; cat packages/domain/",
+    "npx tsc --noEmit -p packages/domain/tsconfig.json 2>&1 | tail -5; echo EXIT $?",
+    "npx tsc --noEmit -p packages/domain/tsconfig.json; echo \"exit=$?\""
+   ],
+   "error": ""
+  },
+  {
+   "id": "vidar-app:4",
+   "arm": "guided",
+   "target": "normalizeDate",
+   "usedBy": 3,
+   "outcome": "independiente",
+   "importsOriginal": false,
+   "dupOfOriginal": false,
+   "lines": 42,
+   "ms": 26535,
+   "usd": 0.00437969,
+   "turns": 9,
+   "tools": [
+    "Bash",
+    "Read",
+    "Bash",
+    "Bash",
+    "Write",
+    "Bash",
+    "Bash",
+    "Bash"
+   ],
+   "commands": [
+    "node harness explore --reuse \"parse date string with trimming, validate calendar date, acc",
+    "ls packages/domain/src/coach/ && cat packages/domain/src/stats/streak-weeks.ts | head -40",
+    "rg -n \"isValidCalendarDate|YYYY|padStart\" packages/domain/src | head -20; cat packages/dom",
+    "node harness reuse-check",
+    "cd /tmp && cat > /tmp/nd-check.mjs <<'EOF'\nconst src = (await import('node:fs')).readFileS",
+    "cd /tmp && cat > /tmp/nd-check.ts <<'EOF'\nimport { normalizeCalendarDate as f } from '/pri"
+   ],
+   "error": ""
+  },
+  {
+   "id": "vidar-app:5",
+   "arm": "guided",
+   "target": "matchExerciseName",
+   "usedBy": 3,
+   "outcome": "duplicó",
+   "importsOriginal": true,
+   "dupOfOriginal": true,
+   "lines": 68,
+   "ms": 25279,
+   "usd": 0.00430671,
+   "turns": 9,
+   "tools": [
+    "Bash",
+    "Read",
+    "Bash",
+    "Bash",
+    "Write",
+    "Bash",
+    "Bash",
+    "Bash"
+   ],
+   "commands": [
+    "node harness explore --reuse \"resolve exercise name to reference id via exact name match i",
+    "ls packages/domain/src 2>/dev/null; ls packages/domain/src/coach 2>/dev/null; cat packages",
+    "cat packages/domain/src/coach/index.ts; grep -rn \"exercise-data\\|apps/\" packages/domain/sr",
+    "node harness reuse-check; echo \"exit=$?\"; cd packages/domain && npx tsc -p tsconfig.json -",
+    "node harness reuse-check",
+    "cd /private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-xBYioq/packages/d"
+   ],
+   "error": ""
+  },
+  {
+   "id": "vidar-app:5",
+   "arm": "plain",
+   "target": "matchExerciseName",
+   "usedBy": 3,
+   "outcome": "duplicó",
+   "importsOriginal": false,
+   "dupOfOriginal": true,
+   "lines": 49,
+   "ms": 14439,
+   "usd": 0.00269683,
+   "turns": 6,
+   "tools": [
+    "Bash",
+    "Bash",
+    "Bash",
+    "Write",
+    "Bash"
+   ],
+   "commands": [
+    "ls packages/domain/src/coach/ 2>/dev/null; ls packages/domain/src 2>/dev/null; cat package",
+    "cd /private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-xBYioq/packages/d",
+    "cd /private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-xBYioq/packages/d",
+    "npx tsc -p tsconfig.json --noEmit 2>&1 | tail -5; echo \"exit=$?\""
+   ],
+   "error": ""
+  },
+  {
+   "id": "vidar-app:6",
+   "arm": "plain",
+   "target": "pullChanges",
+   "usedBy": 4,
+   "outcome": "duplicó",
+   "importsOriginal": false,
+   "dupOfOriginal": true,
+   "lines": 69,
+   "ms": 23533,
+   "usd": 0.004512750000000001,
+   "turns": 8,
+   "tools": [
+    "Bash",
+    "Bash",
+    "Bash",
+    "Write",
+    "Bash",
+    "Bash",
+    "Bash"
+   ],
+   "commands": [
+    "ls packages/domain/src/ packages/domain/src/coach 2>/dev/null; grep -ril \"cursor\\|sync\" pa",
+    "grep -ril \"cursor\" --exclude-dir=node_modules . | head -30; echo ---; cat packages/domain/",
+    "cat apps/mobile/src/shared/sync/pull.ts; echo ---; sed -n 1,80p apps/mobile/src/shared/api",
+    "cd /private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-xBYioq/packages/d",
+    "cd /private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-xBYioq/packages/d",
+    "/private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-xBYioq/node_modules/"
+   ],
+   "error": ""
+  },
+  {
+   "id": "vidar-app:6",
+   "arm": "guided",
+   "target": "pullChanges",
+   "usedBy": 4,
+   "outcome": "duplicó",
+   "importsOriginal": true,
+   "dupOfOriginal": true,
+   "lines": 76,
+   "ms": 39585,
+   "usd": 0.005786520000000001,
+   "turns": 11,
+   "tools": [
+    "Bash",
+    "Bash",
+    "Read",
+    "Bash",
+    "Bash",
+    "Bash",
+    "Write",
+    "Bash",
+    "Bash",
+    "Bash"
+   ],
+   "commands": [
+    "node harness explore --reuse \"pull all pending remote changes page by page from a sync end",
+    "ls packages/domain/src/coach/ 2>/dev/null; grep -ril \"cursor\" packages --include=*.ts -l 2",
+    "ls packages/domain/src/ && cat packages/domain/src/coach/index.ts | head -40",
+    "node harness explore --reuse \"pull all pending remote changes page by page from a sync end",
+    "cat packages/domain/package.json | head -40; grep -rl \"@vidar/domain\" apps/mobile/src 2>/d",
+    "node harness reuse-check; echo \"exit=$?\"; cd packages/domain && npx tsc -p tsconfig.json -",
+    "node harness reuse-check",
+    "cd /private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-xBYioq/packages/d"
+   ],
+   "error": ""
+  },
+  {
+   "id": "vidar-app:7",
+   "arm": "guided",
+   "target": "finishSession",
+   "usedBy": 3,
+   "outcome": "independiente",
+   "importsOriginal": false,
+   "dupOfOriginal": false,
+   "lines": 81,
+   "ms": 49410,
+   "usd": 0.00764975,
+   "turns": 12,
+   "tools": [
+    "Bash",
+    "Bash",
+    "Bash",
+    "Bash",
+    "Write",
+    "Edit",
+    "Edit",
+    "Bash",
+    "Bash",
+    "Bash",
+    "Bash"
+   ],
+   "commands": [
+    "node harness explore --reuse \"function that takes an active workout session, current time,",
+    "ls packages/domain/src/coach/ 2>/dev/null; grep -ril \"personal\\|volume\\|workout\" packages/",
+    "cat packages/domain/src/progression/records.ts; echo ----; cat packages/domain/src/progres",
+    "node harness explore --reuse \"function that takes an active workout session, current time,",
+    "node harness reuse-check; echo \"exit=$?\"; cd packages/domain && (npx tsc --noEmit -p . 2>&",
+    "node harness reuse-check",
+    "cd /private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-xBYioq/packages/d",
+    "ls /private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-xBYioq/packages/d"
+   ],
+   "error": ""
+  },
+  {
+   "id": "vidar-app:7",
+   "arm": "plain",
+   "target": "finishSession",
+   "usedBy": 3,
+   "outcome": "independiente",
+   "importsOriginal": false,
+   "dupOfOriginal": false,
+   "lines": 99,
+   "ms": 22288,
+   "usd": 0.005480290000000001,
+   "turns": 8,
+   "tools": [
+    "Bash",
+    "Grep",
+    "Bash",
+    "Write",
+    "Bash",
+    "Bash",
+    "Bash"
+   ],
+   "commands": [
+    "ls packages/domain/src packages/domain/src/coach 2>&1; cat packages/domain/package.json 2>",
+    "cd /private/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-agents-xBYioq/packages/d",
+    "npx tsc -p tsconfig.json --noEmit 2>&1 | tail -20; echo EXIT=$?",
+    "npx tsc -p tsconfig.json --noEmit; echo \"EXIT=$?\"",
+    "npm run typecheck"
+   ],
+   "error": ""
+  }
+ ]
+}

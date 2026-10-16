@@ -1,0 +1,1081 @@
+{
+ "project": "bridge-gym",
+ "rowsA": [
+  {
+   "id": "bridge-gym:reuse:12",
+   "method": "trad",
+   "ms": 142,
+   "recall": 1,
+   "any": 1,
+   "mrr": 0.2,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:12",
+   "method": "graph_bm25",
+   "ms": 30,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 0
+  },
+  {
+   "id": "bridge-gym:reuse:12",
+   "method": "explorer_deep",
+   "ms": 10922,
+   "recall": 1,
+   "any": 1,
+   "mrr": 0.3333333333333333,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:12",
+   "method": "reuse_graph",
+   "ms": 1439,
+   "recall": 1,
+   "any": 1,
+   "mrr": 1,
+   "n": 4
+  },
+  {
+   "id": "bridge-gym:reuse:12",
+   "method": "reuse_deep",
+   "ms": 10917,
+   "recall": 1,
+   "any": 1,
+   "mrr": 0.5,
+   "n": 5
+  },
+  {
+   "id": "bridge-gym:reuse:13",
+   "method": "trad",
+   "ms": 83,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:13",
+   "method": "graph_bm25",
+   "ms": 9,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 0
+  },
+  {
+   "id": "bridge-gym:reuse:13",
+   "method": "explorer_deep",
+   "ms": 8672,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:13",
+   "method": "reuse_graph",
+   "ms": 1377,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 0
+  },
+  {
+   "id": "bridge-gym:reuse:13",
+   "method": "reuse_deep",
+   "ms": 14118,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 3
+  },
+  {
+   "id": "bridge-gym:reuse:14",
+   "method": "trad",
+   "ms": 126,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:14",
+   "method": "graph_bm25",
+   "ms": 15,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:14",
+   "method": "explorer_deep",
+   "ms": 11489,
+   "recall": 1,
+   "any": 1,
+   "mrr": 1,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:14",
+   "method": "reuse_graph",
+   "ms": 1461,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:14",
+   "method": "reuse_deep",
+   "ms": 15022,
+   "recall": 1,
+   "any": 1,
+   "mrr": 1,
+   "n": 3
+  },
+  {
+   "id": "bridge-gym:reuse:15",
+   "method": "trad",
+   "ms": 88,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:15",
+   "method": "graph_bm25",
+   "ms": 13,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 0
+  },
+  {
+   "id": "bridge-gym:reuse:15",
+   "method": "explorer_deep",
+   "ms": 9810,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:15",
+   "method": "reuse_graph",
+   "ms": 1260,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 0
+  },
+  {
+   "id": "bridge-gym:reuse:15",
+   "method": "reuse_deep",
+   "ms": 13692,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 6
+  },
+  {
+   "id": "bridge-gym:reuse:16",
+   "method": "trad",
+   "ms": 101,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:16",
+   "method": "graph_bm25",
+   "ms": 15,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:16",
+   "method": "explorer_deep",
+   "ms": 13044,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:16",
+   "method": "reuse_graph",
+   "ms": 1441,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 6
+  },
+  {
+   "id": "bridge-gym:reuse:16",
+   "method": "reuse_deep",
+   "ms": 14205,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 3
+  },
+  {
+   "id": "bridge-gym:reuse:17",
+   "method": "trad",
+   "ms": 110,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:17",
+   "method": "graph_bm25",
+   "ms": 8,
+   "recall": 1,
+   "any": 1,
+   "mrr": 0.3333333333333333,
+   "n": 4
+  },
+  {
+   "id": "bridge-gym:reuse:17",
+   "method": "explorer_deep",
+   "ms": 9468,
+   "recall": 1,
+   "any": 1,
+   "mrr": 1,
+   "n": 6
+  },
+  {
+   "id": "bridge-gym:reuse:17",
+   "method": "reuse_graph",
+   "ms": 1403,
+   "recall": 1,
+   "any": 1,
+   "mrr": 0.5,
+   "n": 2
+  },
+  {
+   "id": "bridge-gym:reuse:17",
+   "method": "reuse_deep",
+   "ms": 11782,
+   "recall": 1,
+   "any": 1,
+   "mrr": 1,
+   "n": 4
+  },
+  {
+   "id": "bridge-gym:reuse:18",
+   "method": "trad",
+   "ms": 110,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:18",
+   "method": "graph_bm25",
+   "ms": 8,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 1
+  },
+  {
+   "id": "bridge-gym:reuse:18",
+   "method": "explorer_deep",
+   "ms": 8580,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:18",
+   "method": "reuse_graph",
+   "ms": 1369,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 1
+  },
+  {
+   "id": "bridge-gym:reuse:18",
+   "method": "reuse_deep",
+   "ms": 10755,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 5
+  },
+  {
+   "id": "bridge-gym:reuse:19",
+   "method": "trad",
+   "ms": 115,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:19",
+   "method": "graph_bm25",
+   "ms": 9,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:19",
+   "method": "explorer_deep",
+   "ms": 8031,
+   "recall": 1,
+   "any": 1,
+   "mrr": 1,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:19",
+   "method": "reuse_graph",
+   "ms": 1385,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 5
+  },
+  {
+   "id": "bridge-gym:reuse:19",
+   "method": "reuse_deep",
+   "ms": 9854,
+   "recall": 1,
+   "any": 1,
+   "mrr": 1,
+   "n": 3
+  },
+  {
+   "id": "bridge-gym:reuse:20",
+   "method": "trad",
+   "ms": 62,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:20",
+   "method": "graph_bm25",
+   "ms": 13,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 7
+  },
+  {
+   "id": "bridge-gym:reuse:20",
+   "method": "explorer_deep",
+   "ms": 11191,
+   "recall": 0.5,
+   "any": 1,
+   "mrr": 0.25,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:20",
+   "method": "reuse_graph",
+   "ms": 1383,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 5
+  },
+  {
+   "id": "bridge-gym:reuse:20",
+   "method": "reuse_deep",
+   "ms": 12065,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 4
+  },
+  {
+   "id": "bridge-gym:reuse:21",
+   "method": "trad",
+   "ms": 81,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:21",
+   "method": "graph_bm25",
+   "ms": 9,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:21",
+   "method": "explorer_deep",
+   "ms": 11267,
+   "recall": 1,
+   "any": 1,
+   "mrr": 0.5,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:21",
+   "method": "reuse_graph",
+   "ms": 1415,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 4
+  },
+  {
+   "id": "bridge-gym:reuse:21",
+   "method": "reuse_deep",
+   "ms": 15561,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 4
+  },
+  {
+   "id": "bridge-gym:reuse:22",
+   "method": "trad",
+   "ms": 134,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:22",
+   "method": "graph_bm25",
+   "ms": 15,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:22",
+   "method": "explorer_deep",
+   "ms": 11259,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 6
+  },
+  {
+   "id": "bridge-gym:reuse:22",
+   "method": "reuse_graph",
+   "ms": 1438,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:22",
+   "method": "reuse_deep",
+   "ms": 11117,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 2
+  },
+  {
+   "id": "bridge-gym:reuse:23",
+   "method": "trad",
+   "ms": 103,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:23",
+   "method": "graph_bm25",
+   "ms": 10,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 5
+  },
+  {
+   "id": "bridge-gym:reuse:23",
+   "method": "explorer_deep",
+   "ms": 7512,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "bridge-gym:reuse:23",
+   "method": "reuse_graph",
+   "ms": 1358,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 2
+  },
+  {
+   "id": "bridge-gym:reuse:23",
+   "method": "reuse_deep",
+   "ms": 8041,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 2
+  }
+ ],
+ "rowsB": [
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "checkIdentityMapReadiness",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "checkIdentityMapReadiness",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.75,
+   "topJaccard": 0.75,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "checkIdentityMapReadiness",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 0,
+   "jaccard": 0.56,
+   "topJaccard": 0.56,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "checkListenerHost",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "checkListenerHost",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.72,
+   "topJaccard": 0.72,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "checkListenerHost",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.68,
+   "topJaccard": 0.68,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "runExternalWriterScenario",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "runExternalWriterScenario",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.87,
+   "topJaccard": 0.87,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "runExternalWriterScenario",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.73,
+   "topJaccard": 0.73,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "checkCaptureTrust",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "checkCaptureTrust",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.63,
+   "topJaccard": 0.63,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "checkCaptureTrust",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.63,
+   "topJaccard": 0.63,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "nextEnrollmentPoll",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "nextEnrollmentPoll",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.7,
+   "topJaccard": 0.7,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "nextEnrollmentPoll",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.8,
+   "topJaccard": 0.8,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "shouldPauseAfterPoll",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "shouldPauseAfterPoll",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 0,
+   "jaccard": 0.51,
+   "topJaccard": 0.51,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "shouldPauseAfterPoll",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 0,
+   "jaccard": 0.51,
+   "topJaccard": 0.51,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "describeClosedWindow",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "describeClosedWindow",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 0,
+   "jaccard": 0.49,
+   "topJaccard": 0.49,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "describeClosedWindow",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.61,
+   "topJaccard": 0.61,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "checkEnrollmentWindow",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "checkEnrollmentWindow",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.76,
+   "topJaccard": 0.76,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "checkEnrollmentWindow",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.73,
+   "topJaccard": 0.73,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "describePollFallback",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "describePollFallback",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 0,
+   "jaccard": 0.58,
+   "topJaccard": 0.58,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "describePollFallback",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 0,
+   "jaccard": 0.58,
+   "topJaccard": 0.58,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "createWindowsEventLogNotifier",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "createWindowsEventLogNotifier",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.9,
+   "topJaccard": 0.9,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "createWindowsEventLogNotifier",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.73,
+   "topJaccard": 0.73,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "resolveDataPath",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "resolveDataPath",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 0,
+   "jaccard": 0.52,
+   "topJaccard": 0.52,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "resolveDataPath",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 0,
+   "jaccard": 0.52,
+   "topJaccard": 0.52,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "parseRejectionCodes",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "parseRejectionCodes",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.82,
+   "topJaccard": 0.82,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "parseRejectionCodes",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 0,
+   "jaccard": 0.54,
+   "topJaccard": 0.54,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "saveAgreementsCache",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "PlanFilterSelectSkeleton",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "Clock",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "periodUnitOptions",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "nextTicketBalance",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "ServiceWorkerRegister",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "buildMuscleExerciseLookup",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "disableUser",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "localDateFrom",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "inferBodyPart",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "pullChanges",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "retryWithMine",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  }
+ ],
+ "index": {
+  "project": "harness-62402e6d",
+  "nodes": 3509,
+  "edges": 7447,
+  "ms": 661
+ }
+}

@@ -1,0 +1,18 @@
+............node:fs:2426
+    return binding.writeFileUtf8(
+                   ^
+
+Error: ENOENT: no such file or directory, open '/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-inj-oBVOJz/src/__bench_dup.ts'
+    at writeFileSync (node:fs:2426:20)
+    at run (file:///Users/ebedoya/Projects/ia-tools/harnesses/software-engineer/bench/rigor/reuse-micro.mjs:67:3)
+    at file:///Users/ebedoya/Projects/ia-tools/harnesses/software-engineer/bench/rigor/reuse-micro.mjs:78:40
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:547:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/xj/1x41w6w16f387fw9_h_4gfq40000gn/T/reuse-inj-oBVOJz/src/__bench_dup.ts'
+}
+
+Node.js v22.13.1

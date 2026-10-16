@@ -1,0 +1,2303 @@
+<title>Medición del explorer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#f7f7f5;--card:#fff;--ink:#16181a;--ink2:#52544f;--ink3:#7b7d77;--line:#dcded8;--grid:#ebece7;
+--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--good:#1d7a4d;--bad:#b3402f;--warnbg:#fbf1e6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121413;--card:#1a1c1b;--ink:#eceeea;--ink2:#b9bbb4;--ink3:#8c8e87;--line:#2e312e;--grid:#242725;
+--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--good:#58c58f;--bad:#e8806f;--warnbg:#2a221a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121413;--card:#1a1c1b;--ink:#eceeea;--ink2:#b9bbb4;--ink3:#8c8e87;--line:#2e312e;--grid:#242725;
+--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--good:#58c58f;--bad:#e8806f;--warnbg:#2a221a;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 "IBM Plex Sans",system-ui,sans-serif;margin:0;padding-inline:16px;padding-block:32px}
+main{max-width:960px;margin:auto;display:grid;gap:36px;min-width:0}
+h1{font:600 30px/1.2 "IBM Plex Mono",monospace;margin:0 0 6px;text-wrap:balance}
+h2{font:600 14px "IBM Plex Mono",monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2);margin:0 0 12px}
+h3{font:600 15px "IBM Plex Sans",sans-serif;margin:18px 0 6px}
+p{margin:0 0 10px;max-width:70ch}ul{margin:0;padding-left:20px}li{margin-bottom:6px;max-width:72ch}
+code{font:13px "IBM Plex Mono",monospace;background:var(--grid);padding:1px 5px;border-radius:3px}
+.mut{color:var(--ink2)}.small{font-size:13px;color:var(--ink2)}
+.verdict{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px 18px}
+.verdict li{margin-bottom:8px}
+.warn{background:var(--warnbg);border-left:3px solid var(--s2);padding:10px 14px;border-radius:0 6px 6px 0}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font:600 12px "IBM Plex Mono",monospace;color:var(--ink2)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;margin-bottom:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+.bars{display:grid;gap:7px}
+.row{display:grid;grid-template-columns:132px 1fr 92px;align-items:center;gap:8px;font-size:13px}
+.row .lab{color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.track{position:relative;height:16px;background:var(--grid);border-radius:2px}
+.fill{position:absolute;left:0;top:0;height:100%;border-radius:0 4px 4px 0}
+.whisk{position:absolute;top:7px;height:2px;background:var(--ink);opacity:.7}
+.cap{position:absolute;top:3px;width:2px;height:10px;background:var(--ink);opacity:.7}
+.val{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink);text-align:right}
+.tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:6px 9px;border-radius:5px;z-index:9;display:none;max-width:260px}
+.ok{color:var(--good);font-weight:600}.no{color:var(--bad);font-weight:600}
+@media(max-width:520px){.row{grid-template-columns:96px 1fr 78px}}
+</style>
+<main>
+<header><h1>Medición del explorer</h1>
+<p class="mut">Tres proyectos de Gym Suit · 84 consultas con respuesta verificable · tres métodos de búsqueda · agentes reales con Claude Haiku 5.5</p></header>
+
+<section class="verdict"><h2>Resumen</h2><ul>
+<li><b>Nombres exactos (símbolos y archivos).</b> El grafo en modo <code>full</code> y el explorer empatan arriba (MRR en símbolos 1.00 y 0.98) y ambos superan a <code>rg + fd</code> (0.57). La diferencia del explorer sobre <code>rg + fd</code> es demostrable: +0.41 [0.30, 0.51] en símbolos. El grafo es el más rápido: 9 ms contra 86 ms del explorer.</li>
+<li><b>Tareas descritas con una frase.</b> Sin modelo ningún método funciona (MRR 0.24, 0.24 y 0.22, sin diferencia demostrable entre ellos). Solo <code>--deep</code> con Haiku 5.5 sube a 0.65: +0.41 [0.27, 0.55] sobre <code>rg + fd</code>, con un costo medio de $0.0033 por consulta. Releerlo del caché es gratis.</li>
+<li><b>Agentes reales de punta a punta (Haiku 5.5, 42 tareas).</b> La calidad no se distingue entre los tres métodos (MRR 0.70 con <code>rg + fd</code>, 0.61 con el grafo, 0.64 con el explorer; los intervalos se solapan). En la primera pasada el explorer cuesta $0.0021 más y tarda 11 s más por tarea que <code>rg + fd</code>. No ganó.</li>
+<li><b>Con caché caliente</b> el explorer iguala a <code>rg + fd</code> en calidad (0.70), costo ($0.0036 contra $0.0040) y tiempo, con 1.7 turnos menos. Pero solo acertó el 49% de las consultas (28 de 57), porque los agentes reformulan la pregunta y la clave del caché es exacta.</li>
+<li><b>Invalidación.</b> 144 de 144 pruebas correctas: nunca devolvió una respuesta vieja. Es lo más sólido del diseño.</li>
+<li><b>Proyección, no medición:</b> si el agente fuera Sonnet 5.5 (20 veces el precio de Haiku 5.5 en entrada, salida y caché) con el mismo comportamiento, el costo por tarea sería $0.0809 con <code>rg + fd</code>, $0.1286 con el grafo, $0.0607 con el explorer y $0.0422 con caché caliente. El ahorro viene de usar menos turnos del agente caro y pasar la búsqueda a Haiku.</li>
+<li><b>Reutilización — agentes reales.</b> Ante un requisito para el que ya existía una función, los agentes con las reglas nuevas la reutilizaron en el 67% de los casos contra 28% sin ellas (+39 puntos, intervalo [11, 67], n = 18), al mismo costo ($0.0039 contra $0.0043 por tarea). Escribir duplicados bajó de 39% a 22%, pero con n = 18 esa baja no es demostrable.</li>
+<li><b>Detectar un duplicado ya escrito funciona bien:</b> <code>reuse-check</code> encontró el original en el 100% de las copias renombradas, 100% con líneas añadidas y 100% con un cuarto de las líneas borradas, y marcó solo el 3% de las funciones ajenas (falsos positivos).</li>
+<li><b>Descubrir antes qué reutilizar es mucho más difícil:</b> lo que el desarrollador realmente importó aparece entre los 8 primeros archivos solo en el 29% con <code>--deep</code> y el 14% sin modelo (8% con <code>rg + fd</code>). El modo reuse no mejora al <code>--deep</code> general (+0.02, intervalo que cruza 0). Esa verdad es parcial (hay otras funciones válidas), así que son cifras pesimistas para todos.</li>
+</ul></section>
+
+<section><h2>Cómo se midió</h2>
+<ul>
+<li><b>Corpus.</b> gym-app (1752 archivos), bridge-gym (325) y vidar-app (1366). 28 consultas por proyecto con semilla fija: 14 tareas tomadas de commits reales, 8 símbolos únicos y 6 nombres de archivo.</li>
+<li><b>Verdad independiente.</b> Para las tareas, la respuesta correcta son los archivos que ese commit cambió y que siguen existiendo; la pregunta es el asunto del commit. Ninguna herramienta de búsqueda decide qué es correcto.</li>
+<li><b>Tradicional.</b> <code>rg</code> y <code>fd</code> como los usaría un agente: nombres con <code>fd</code>, texto con <code>rg</code>, y para frases se busca cada palabra clave y se ordena por cuántas aciertan.</li>
+<li><b>Grafo.</b> <code>codebase-memory-mcp</code> con índice en modo <code>full</code>: búsqueda BM25 (<code>search_graph --query</code>) y, para nombres exactos, <code>name_pattern</code>.</li>
+<li><b>Explorer.</b> <code>harness explore</code> en frío (busca y guarda), en caliente (caché) y <code>--deep</code> (Haiku 5.5, solo en tareas).</li>
+<li><b>Estadística.</b> Medias con intervalo de confianza del 95% (bootstrap, 2000 remuestreos) y comparaciones por pares sobre las mismas consultas.</li>
+</ul>
+<div class="warn" style="margin-top:12px"><b>Corrección de mi medición anterior.</b> El índice del grafo que usé antes tenía 1944 nodos; en modo <code>full</code> tiene 13112. Además no usé su búsqueda BM25. Mi conclusión de que el grafo no servía estaba sesgada por eso, y aquí se corrige.</div>
+</section>
+
+<section><h2>1 · Recuperación directa (sin agente)</h2>
+<p>MRR: promedio de 1/posición del primer archivo correcto (1.0 es acertar siempre en primer lugar). La línea negra es el intervalo de confianza del 95%.</p>
+<div class="legend" id="leg1"></div>
+<div class="grid2" id="retrieval"></div>
+<h3>Tabla completa</h3><div class="scroll"><table id="t-ret"></table></div>
+<h3>Comparaciones por pares (MRR)</h3>
+<p class="small">Misma consulta, dos métodos. Δ es la diferencia media de MRR; si el intervalo cruza 0 no hay diferencia demostrable.</p>
+<div class="scroll"><table id="t-pair"></table></div>
+</section>
+
+<section><h2>2 · Velocidad</h2>
+<p class="small">Mediana por consulta, corridas de a un proyecto sin otra carga (5 repeticiones). El explorer en frío incluye escribir el caché.</p>
+<div class="scroll"><table id="t-lat"></table></div></section>
+
+<section><h2>3 · Caché</h2>
+<div class="grid2">
+<div class="panel"><h3 style="margin-top:0">Simulación de carga</h3><div id="sim"></div>
+<p class="small">300 consultas de 4 roles sobre las 28 de cada proyecto, con repetición tipo Zipf. <b>La tasa de aciertos depende de esa suposición</b>: con otro patrón de repetición cambia.</p></div>
+<div class="panel"><h3 style="margin-top:0">Invalidación (prueba de que no devuelve datos viejos)</h3><div class="scroll"><table id="t-inv"></table></div>
+<p class="small">Sobre una copia del repo: se edita un archivo citado, se agrega un archivo que coincide, se edita uno no citado. Las entradas de Haiku se simulan con un <code>claude</code> falso porque aquí se prueba el mecanismo, no al modelo.</p></div>
+</div>
+<div class="panel" style="margin-top:14px"><h3 style="margin-top:0">Lo que el caché sí y no aporta</h3><ul>
+<li><b>Sí aporta:</b> las respuestas de Haiku (caras) quedan guardadas y vigentes; releerlas cuesta $0 y 20 ms. Entre agentes, la tarea que ya resolvió uno la recibe el siguiente sin pagar de nuevo.</li>
+<li><b>Casi no aporta en nombres exactos:</b> volver a buscar cuesta 86 ms y leer el caché 22 ms. El valor ahí es el archivo de handoff, no la velocidad.</li>
+<li><b>Límite real:</b> la clave es la pregunta normalizada. En la segunda pasada con agentes reales hubo 28 aciertos en 57 consultas (49%), porque el agente reescribe la pregunta. Sin una clave tolerante a reformulaciones, el caché rinde menos de lo que sugiere la simulación del 91%.</li>
+</ul></div>
+</section>
+
+<section><h2>4 · Agentes reales de punta a punta</h2>
+<p>Las mismas 42 tareas (14 por proyecto, de commits reales) con el mismo agente (Claude Haiku 5.5 en sesión mínima). Solo cambian las herramientas: <b>rg + fd</b> (Grep, Glob, Bash rg/fd, Read), <b>grafo</b> (codebase-memory-mcp en modo full + Read) y <b>explorer</b> (<code>harness explore</code> + Read). Se pide como máximo 8 archivos y se compara con los del commit. El costo del explorer incluye el Haiku interno de <code>--deep</code>. "Caché caliente" repite las mismas tareas con el caché de la primera pasada.</p>
+<div class="legend" id="leg2"></div>
+<div class="grid2" id="agents"></div>
+<h3>Costo y esfuerzo por tarea</h3>
+<div class="scroll"><table id="t-agent"></table></div>
+<h3>Diferencias por pares (misma tarea)</h3>
+<p class="small">Cada celda es la diferencia media del primero menos el segundo, con intervalo de confianza del 95%. En verde, una mejora de calidad demostrable; en rojo, una diferencia de costo o tiempo demostrable. Sin color, el intervalo cruza 0.</p>
+<div class="scroll"><table><tr><th>comparación</th><th>MRR</th><th>USD por tarea</th><th>segundos</th><th>turnos</th></tr>
+<tr><td>explorer vs rg + fd</td><td class="">-0.05 [-0.18, 0.07]</td><td class="no">+0.0021 [0.0014, 0.0026]</td><td class="no">+11.2 s [9.15, 13.72]</td><td class="">-0.9 [-1.86, 0.05]</td></tr><tr><td>grafo vs rg + fd</td><td class="">-0.08 [-0.20, 0.02]</td><td class="no">+0.0024 [0.0016, 0.0032]</td><td class="no">+6.2 s [3.11, 10.56]</td><td class="no">+4.0 [2.60, 5.57]</td></tr><tr><td>explorer vs grafo</td><td class="">+0.03 [-0.08, 0.14]</td><td class="">-0.0003 [-0.0014, 0.0007]</td><td class="">+5.0 s [-0.12, 9.26]</td><td class="no">-4.9 [-6.79, -3.26]</td></tr><tr><td>caché caliente vs explorer 1ª pasada</td><td class="">+0.05 [-0.03, 0.15]</td><td class="no">-0.0025 [-0.0035, -0.0014]</td><td class="no">-9.1 s [-13.21, -5.11]</td><td class="no">-0.8 [-1.48, -0.24]</td></tr><tr><td>caché caliente vs rg + fd</td><td class="">+0.00 [-0.09, 0.10]</td><td class="">-0.0004 [-0.0013, 0.0005]</td><td class="">+2.0 s [-1.00, 5.58]</td><td class="no">-1.7 [-2.52, -0.98]</td></tr></table></div>
+<h3>Proyección de costo con un agente Sonnet 5.5</h3>
+<p class="small">Estimación, no medición. Supone que el agente se comporta igual (mismos turnos y tokens) y que Sonnet 5.5 cuesta 20 veces lo de Haiku 5.5 ($2 / $10 / $0.20 contra $0.10 / $0.50 / $0.01 por millón; para la escritura de caché supongo la misma proporción). El Haiku interno del explorer se mantiene a precio de Haiku.</p>
+<div class="scroll"><table><tr><th>método</th><th>agente Haiku 5.5</th><th>agente Sonnet 5.5 (proyección)</th></tr>
+<tr><td>rg + fd</td><td>$0.0040</td><td>$0.0809</td></tr><tr><td>grafo</td><td>$0.0064</td><td>$0.1286</td></tr><tr><td>explorer</td><td>$0.0061</td><td>$0.0607</td></tr><tr><td>explorer (caché caliente)</td><td>$0.0036</td><td>$0.0422</td></tr></table></div>
+</section>
+
+<section><h2>5 · Reutilización de código</h2>
+<p>Se agregó al harness evitar repetir código en dos momentos: <b>antes</b> de escribir (<code>harness explore --reuse "&lt;qué voy a escribir&gt;"</code>) y <b>después</b> (<code>harness reuse-check</code>, que compara lo que el diff escribió con el código existente). Se midieron por separado porque fallan de forma distinta.</p>
+<h3>A · ¿Encuentra lo que el desarrollador realmente reutilizó?</h3>
+<p class="small">36 commits reales donde el desarrollador importó módulos que ya existían. Fracción de esos módulos que cada método pone entre sus 8 primeros archivos.</p>
+<div class="legend" id="legA"></div>
+<div class="grid2"><div class="panel"><div class="bars" id="reuseA"></div></div><div class="panel scroll"><table id="t-reuseA"></table></div></div>
+<h3>B · ¿Detecta duplicados escritos con otros nombres?</h3>
+<p class="small">Se copian funciones existentes a una copia indexada del repo, disfrazadas en tres niveles, y se corre <code>reuse-check</code>. El control negativo usa funciones de otros repos, que no deberían marcarse.</p>
+<div class="scroll"><table id="t-reuseB"></table></div>
+<h3>C · Agentes reales: ¿reutilizan o escriben de nuevo?</h3>
+<p class="small">Requisito para el que ya existe una función (redactado sin su nombre). Mismo agente (Haiku 5.5), archivo nuevo en otro módulo. Sin guía contra con las reglas del executor (<code>explore --reuse</code> y <code>reuse-check</code>).</p>
+<div class="grid2"><div class="panel" id="reuseC"></div><div class="panel scroll"><table id="t-reuseC"></table></div></div>
+<div class="panel" style="margin-top:14px"><h3 style="margin-top:0">Lo que dicen las tres mediciones juntas</h3><ul>
+<li><b>La red de seguridad es el detector, no la búsqueda previa.</b> <code>reuse-check</code> es determinista, rápido (1 a 2 s) y casi no da falsos positivos (3%). Pero solo detecta clones estructurales: una función que hace lo mismo escrita de otra forma no se ve.</li>
+<li><b>La búsqueda previa ayuda al agente aunque su recall sea bajo.</b> En la prueba con agentes, las reglas movieron "reutilizó" de 28% a 67%, y los 18 agentes con reglas ejecutaron ambos comandos. Un agente usa la lista como pista y confirma leyendo el código.</li>
+<li><b>4 de 18 agentes guiados duplicaron igual</b> a pesar de haber corrido <code>reuse-check</code>. El comando solo informa (no falla), así que el agente puede ignorarlo. No verifiqué por qué en cada caso.</li>
+<li><b>El requisito en un idioma y el código en otro es el caso difícil.</b> Un ejemplo que sí funcionó: "crear un select de planes de membresía con filtro" encontró <code>PlanFilterSelect</code> con <code>--deep</code> en 7 s y $0.003.</li>
+</ul></div>
+</section>
+<section><h2>6 · Qué cambió en el harness</h2><p>Después de medir, el harness quedó con <b>un solo sistema</b>: reutilización sobre el grafo de código.</p><ul>
+<li><b>Lo que queda:</b> <code>harness explore "&lt;qué vas a escribir&gt;"</code> (candidatos existentes con firma, archivo:línea y número de usos), <code>--deep</code> (Haiku 5.5 decide <code>reuse</code>, <code>extend</code> o <code>new</code>; la respuesta se guarda y vale mientras los archivos citados no cambien), <code>harness reuse-check [--strict]</code> (el diff contra el código existente; con <code>--strict</code> un duplicado sale con código 1) y <code>harness explore --reindex</code> (grafo en modo <code>full</code>, una vez por repo).</li>
+<li><b>Lo que se eliminó:</b> el explorer de búsqueda de texto con caché <code>.toon</code>, sus estadísticas y la regla "usa explore primero para todo". Con un agente real no mejoró a <code>rg + fd</code> y el 49% de aciertos de caché no justificaba mantenerlo. Las secciones 1 a 4 de este informe quedan como registro de por qué.</li>
+<li><b>Reglas del flujo:</b> el executor consulta antes de escribir y corre <code>reuse-check --strict</code> antes de terminar; si escribe algo nuevo lo justifica con <code>new: &lt;motivo&gt;</code>. El reviewer corre <code>reuse-check --strict</code> y rechaza un duplicado sin justificar. El planner lista lo reutilizable en el plan y el designer reutiliza componentes existentes.</li>
+<li><b>Haiku 5.5</b> es el modelo del rol <code>explore</code> (ya no se lanza por Herdr). La caché de sus respuestas puede salir del repo con <code>HARNESS_REUSE_DIR</code>.</li>
+</ul></section>
+<section><h2>7 · Errores que la medición destapó</h2><ul>
+<li><b>Un acierto de caché perdía el "por qué" de cada archivo.</b> Las aristas no guardaban esa columna y el agente recibía filas sin explicación. En una prueba preliminar de 18 tareas, el acierto en primer lugar con caché caliente cayó a 0.39 frente a 0.61 sin caché; probablemente por eso, aunque no lo aislé. Corregido: ahora se guarda y se devuelve, y en la corrida final con 42 tareas el caché caliente no empeora (0.60).</li>
+<li><b><code>--deep</code> repetía archivos.</b> Haiku devolvía el mismo archivo con distintas líneas y se contaba dos veces: 16 de 42 consultas tenían recall mayor que 1. Corregido: se deduplica por ruta.</li>
+<li><b>Mi prueba de invalidación fallaba con nombres con punto</b> (31 de 36). Era un error del test, no del explorer. Corregido; ahora 36 de 36.</li>
+<li><b>Mi primera medición del grafo era injusta</b> (ver el aviso arriba). Con el índice <code>full</code> y su búsqueda BM25 el grafo pasó de recall 0.17 a rendir como el mejor método en nombres exactos.</li>
+<li><b>Reutilización — el grafo falla en silencio de tres formas.</b> Mi consulta de "cuántos lo usan" devolvía 0 (el dialecto Cypher no acepta <code>type(r) IN [...]</code>); el binario del grafo se leía una sola vez al importar y los tests no podían sustituirlo; y en macOS <code>/var</code> y <code>/private/var</code> hacían que el repo copiado no se encontrara.</li>
+<li><b>Las latencias medidas con tres proyectos en paralelo salían infladas.</b> Las de este informe se midieron de a un proyecto, sin otra carga.</li>
+</ul></section>
+<section><h2>8 · Límites de esta medición</h2><ul>
+<li><b>Tamaño.</b> 84 consultas en la recuperación directa y 42 en los agentes. Los intervalos son anchos: una diferencia de 0.05 de MRR no se puede distinguir de cero.</li>
+<li><b>Una semilla, tres repositorios de la misma organización</b> (TypeScript, Next.js y servicios). No sé si generaliza a otros lenguajes ni a repos mucho más grandes.</li>
+<li><b>La verdad es incompleta a propósito.</b> Los archivos del commit no son los únicos que servirían para hacer la tarea; subestima a todos los métodos por igual, pero no mide utilidad real para un humano. Los asuntos de commit están en español e inglés y usan términos internos.</li>
+<li><b>Un solo modelo de agente</b> (Haiku 5.5). Un agente más fuerte puede usar las herramientas distinto. Los costos de Sonnet son una proyección.</li>
+<li><b>No se probó el flujo real.</b> No corrió un executor de Codex llamando al explorer dentro de una tarea del harness, ni en tier T2 (sin red, donde <code>--deep</code> no funciona).</li>
+<li><b>Reutilización: muestra pequeña.</b> 18 requisitos con agente (2 en bridge-gym, 8 y 8 en los otros), porque solo servían funciones con 3 o más usos; la baja de duplicados (−17 puntos) no es demostrable. El detector se midió con copias que yo fabriqué (tres niveles de disfraz), no con duplicados escritos por personas, y solo para TypeScript/JavaScript.</li>
+<li><b>Los tres proyectos corrieron a la vez</b> en los agentes: los segundos incluyen algo de contención. El orden de los métodos rotó, pero el caché de prompt del proveedor puede favorecer a quien corre después.</li>
+<li><b>La tasa de aciertos de la simulación (91%) depende de una distribución Zipf que yo elegí.</b> El 49% de los agentes reales es la medida confiable, y es para tareas repetidas exactas.</li>
+</ul></section>
+<section><h2>9 · Qué haría ahora</h2><ul>
+<li><b>Usar el grafo en modo <code>full</code> como base.</b> Fue el método más rápido y preciso para nombres exactos, y el sistema de reutilización depende de él. Reindexar al cambiar mucho el código.</li>
+<li><b>Mantener <code>reuse-check --strict</code> como control, no como consejo.</b> Es lo más fiable que se midió (encuentra el original en el 100% de los clones disfrazados, con 3% de falsos positivos). Si en uso real se ve que los agentes lo esquivan, el siguiente paso es ponerlo en el gate de la tarea.</li>
+<li><b>Esperar menos del descubrimiento previo:</b> con 29% de recall en el mejor caso es una pista para el agente, no una garantía. Su valor medido está en que el agente la lea y confirme (sube la reutilización de 28% a 67%).</li>
+<li><b>Medir una tarea real del harness</b> con un executor de Codex antes de darlo por probado: aquí no se probó dentro del flujo completo ni en tier T2 (sin red, donde <code>--deep</code> no funciona).</li>
+</ul></section>
+</main>
+<div class="tip" id="tip"></div>
+<script>
+const S={
+ "retrieval": {
+  "trad|commit": {
+   "n": 42,
+   "hit1": {
+    "n": 42,
+    "mean": 0.16666666666666666,
+    "ci": [
+     0.07142857142857142,
+     0.2857142857142857
+    ]
+   },
+   "hit5": {
+    "n": 42,
+    "mean": 0.3333333333333333,
+    "ci": [
+     0.19047619047619047,
+     0.47619047619047616
+    ]
+   },
+   "recall10": {
+    "n": 42,
+    "mean": 0.22579365079365077,
+    "ci": [
+     0.126984126984127,
+     0.32896825396825397
+    ]
+   },
+   "mrr": {
+    "n": 42,
+    "mean": 0.2380249355702695,
+    "ci": [
+     0.13537124251409965,
+     0.35302129398768056
+    ]
+   },
+   "bytes": 33625,
+   "usd": 0
+  },
+  "trad|symbol": {
+   "n": 24,
+   "hit1": {
+    "n": 24,
+    "mean": 0.25,
+    "ci": [
+     0.08333333333333333,
+     0.4166666666666667
+    ]
+   },
+   "hit5": {
+    "n": 24,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "recall10": {
+    "n": 24,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "mrr": {
+    "n": 24,
+    "mean": 0.5708333333333334,
+    "ci": [
+     0.4680555555555555,
+     0.6784722222222221
+    ]
+   },
+   "bytes": 231,
+   "usd": 0
+  },
+  "trad|file": {
+   "n": 18,
+   "hit1": {
+    "n": 18,
+    "mean": 0.6111111111111112,
+    "ci": [
+     0.3888888888888889,
+     0.8333333333333334
+    ]
+   },
+   "hit5": {
+    "n": 18,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "recall10": {
+    "n": 18,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "mrr": {
+    "n": 18,
+    "mean": 0.8055555555555556,
+    "ci": [
+     0.6944444444444444,
+     0.9166666666666666
+    ]
+   },
+   "bytes": 453,
+   "usd": 0
+  },
+  "trad|all": {
+   "n": 84,
+   "hit1": {
+    "n": 84,
+    "mean": 0.2857142857142857,
+    "ci": [
+     0.19047619047619047,
+     0.38095238095238093
+    ]
+   },
+   "hit5": {
+    "n": 84,
+    "mean": 0.6666666666666666,
+    "ci": [
+     0.5714285714285714,
+     0.7619047619047619
+    ]
+   },
+   "recall10": {
+    "n": 84,
+    "mean": 0.6128968253968254,
+    "ci": [
+     0.5148809523809523,
+     0.7111111111111111
+    ]
+   },
+   "mrr": {
+    "n": 84,
+    "mean": 0.45472675349942043,
+    "ci": [
+     0.3750250955082888,
+     0.5416595518099279
+    ]
+   },
+   "bytes": 16976,
+   "usd": 0
+  },
+  "graph_bm25|commit": {
+   "n": 42,
+   "hit1": {
+    "n": 42,
+    "mean": 0.16666666666666666,
+    "ci": [
+     0.07142857142857142,
+     0.2857142857142857
+    ]
+   },
+   "hit5": {
+    "n": 42,
+    "mean": 0.3333333333333333,
+    "ci": [
+     0.19047619047619047,
+     0.47619047619047616
+    ]
+   },
+   "recall10": {
+    "n": 42,
+    "mean": 0.2198412698412698,
+    "ci": [
+     0.13690476190476192,
+     0.3138888888888889
+    ]
+   },
+   "mrr": {
+    "n": 42,
+    "mean": 0.23749055177626602,
+    "ci": [
+     0.1327286470143613,
+     0.35680272108843536
+    ]
+   },
+   "bytes": 4106,
+   "usd": 0
+  },
+  "graph_bm25|symbol": {
+   "n": 24,
+   "hit1": {
+    "n": 24,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "hit5": {
+    "n": 24,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "recall10": {
+    "n": 24,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "mrr": {
+    "n": 24,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "bytes": 637,
+   "usd": 0
+  },
+  "graph_bm25|file": {
+   "n": 18,
+   "hit1": {
+    "n": 18,
+    "mean": 0.8888888888888888,
+    "ci": [
+     0.7222222222222222,
+     1
+    ]
+   },
+   "hit5": {
+    "n": 18,
+    "mean": 0.8888888888888888,
+    "ci": [
+     0.7222222222222222,
+     1
+    ]
+   },
+   "recall10": {
+    "n": 18,
+    "mean": 0.8888888888888888,
+    "ci": [
+     0.7222222222222222,
+     1
+    ]
+   },
+   "mrr": {
+    "n": 18,
+    "mean": 0.8888888888888888,
+    "ci": [
+     0.7222222222222222,
+     1
+    ]
+   },
+   "bytes": 3321,
+   "usd": 0
+  },
+  "graph_bm25|all": {
+   "n": 84,
+   "hit1": {
+    "n": 84,
+    "mean": 0.5595238095238095,
+    "ci": [
+     0.4523809523809524,
+     0.6666666666666666
+    ]
+   },
+   "hit5": {
+    "n": 84,
+    "mean": 0.6428571428571429,
+    "ci": [
+     0.5357142857142857,
+     0.7380952380952381
+    ]
+   },
+   "recall10": {
+    "n": 84,
+    "mean": 0.5861111111111112,
+    "ci": [
+     0.49107142857142866,
+     0.6793650793650794
+    ]
+   },
+   "mrr": {
+    "n": 84,
+    "mean": 0.5949357520786093,
+    "ci": [
+     0.49220521541950113,
+     0.6919217687074831
+    ]
+   },
+   "bytes": 2947,
+   "usd": 0
+  },
+  "explorer_cold|commit": {
+   "n": 42,
+   "hit1": {
+    "n": 42,
+    "mean": 0.09523809523809523,
+    "ci": [
+     0.023809523809523808,
+     0.19047619047619047
+    ]
+   },
+   "hit5": {
+    "n": 42,
+    "mean": 0.40476190476190477,
+    "ci": [
+     0.2619047619047619,
+     0.5476190476190477
+    ]
+   },
+   "recall10": {
+    "n": 42,
+    "mean": 0.2924603174603175,
+    "ci": [
+     0.19365079365079363,
+     0.394047619047619
+    ]
+   },
+   "mrr": {
+    "n": 42,
+    "mean": 0.22463151927437638,
+    "ci": [
+     0.14168556311413455,
+     0.32227891156462585
+    ]
+   },
+   "bytes": 2108,
+   "usd": 0
+  },
+  "explorer_cold|symbol": {
+   "n": 24,
+   "hit1": {
+    "n": 24,
+    "mean": 0.9583333333333334,
+    "ci": [
+     0.875,
+     1
+    ]
+   },
+   "hit5": {
+    "n": 24,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "recall10": {
+    "n": 24,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "mrr": {
+    "n": 24,
+    "mean": 0.9791666666666666,
+    "ci": [
+     0.9375,
+     1
+    ]
+   },
+   "bytes": 949,
+   "usd": 0
+  },
+  "explorer_cold|file": {
+   "n": 18,
+   "hit1": {
+    "n": 18,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "hit5": {
+    "n": 18,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "recall10": {
+    "n": 18,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "mrr": {
+    "n": 18,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "bytes": 1254,
+   "usd": 0
+  },
+  "explorer_cold|all": {
+   "n": 84,
+   "hit1": {
+    "n": 84,
+    "mean": 0.5357142857142857,
+    "ci": [
+     0.42857142857142855,
+     0.6428571428571429
+    ]
+   },
+   "hit5": {
+    "n": 84,
+    "mean": 0.7023809523809523,
+    "ci": [
+     0.6071428571428571,
+     0.7976190476190477
+    ]
+   },
+   "recall10": {
+    "n": 84,
+    "mean": 0.6462301587301588,
+    "ci": [
+     0.5529761904761906,
+     0.738293650793651
+    ]
+   },
+   "mrr": {
+    "n": 84,
+    "mean": 0.6063633786848073,
+    "ci": [
+     0.5122307256235828,
+     0.7005952380952382
+    ]
+   },
+   "bytes": 1594,
+   "usd": 0
+  },
+  "explorer_warm|commit": {
+   "n": 42,
+   "hit1": {
+    "n": 42,
+    "mean": 0.09523809523809523,
+    "ci": [
+     0.023809523809523808,
+     0.19047619047619047
+    ]
+   },
+   "hit5": {
+    "n": 42,
+    "mean": 0.40476190476190477,
+    "ci": [
+     0.2619047619047619,
+     0.5476190476190477
+    ]
+   },
+   "recall10": {
+    "n": 42,
+    "mean": 0.2924603174603175,
+    "ci": [
+     0.19365079365079363,
+     0.394047619047619
+    ]
+   },
+   "mrr": {
+    "n": 42,
+    "mean": 0.22463151927437638,
+    "ci": [
+     0.14168556311413455,
+     0.32227891156462585
+    ]
+   },
+   "bytes": 1998,
+   "usd": 0
+  },
+  "explorer_warm|symbol": {
+   "n": 24,
+   "hit1": {
+    "n": 24,
+    "mean": 0.9583333333333334,
+    "ci": [
+     0.875,
+     1
+    ]
+   },
+   "hit5": {
+    "n": 24,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "recall10": {
+    "n": 24,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "mrr": {
+    "n": 24,
+    "mean": 0.9791666666666666,
+    "ci": [
+     0.9375,
+     1
+    ]
+   },
+   "bytes": 948,
+   "usd": 0
+  },
+  "explorer_warm|file": {
+   "n": 18,
+   "hit1": {
+    "n": 18,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "hit5": {
+    "n": 18,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "recall10": {
+    "n": 18,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "mrr": {
+    "n": 18,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "bytes": 1253,
+   "usd": 0
+  },
+  "explorer_warm|all": {
+   "n": 84,
+   "hit1": {
+    "n": 84,
+    "mean": 0.5357142857142857,
+    "ci": [
+     0.42857142857142855,
+     0.6428571428571429
+    ]
+   },
+   "hit5": {
+    "n": 84,
+    "mean": 0.7023809523809523,
+    "ci": [
+     0.6071428571428571,
+     0.7976190476190477
+    ]
+   },
+   "recall10": {
+    "n": 84,
+    "mean": 0.6462301587301588,
+    "ci": [
+     0.5529761904761906,
+     0.738293650793651
+    ]
+   },
+   "mrr": {
+    "n": 84,
+    "mean": 0.6063633786848073,
+    "ci": [
+     0.5122307256235828,
+     0.7005952380952382
+    ]
+   },
+   "bytes": 1538,
+   "usd": 0
+  },
+  "explorer_deep|commit": {
+   "n": 42,
+   "hit1": {
+    "n": 42,
+    "mean": 0.5714285714285714,
+    "ci": [
+     0.42857142857142855,
+     0.7380952380952381
+    ]
+   },
+   "hit5": {
+    "n": 42,
+    "mean": 0.7380952380952381,
+    "ci": [
+     0.5952380952380952,
+     0.8571428571428571
+    ]
+   },
+   "recall10": {
+    "n": 42,
+    "mean": 0.6916666666666667,
+    "ci": [
+     0.567063492063492,
+     0.8083333333333333
+    ]
+   },
+   "mrr": {
+    "n": 42,
+    "mean": 0.6489040060468632,
+    "ci": [
+     0.5211262282690855,
+     0.7806122448979591
+    ]
+   },
+   "bytes": 1466,
+   "usd": 0.0034348333333333336
+  },
+  "explorer_deep|all": {
+   "n": 42,
+   "hit1": {
+    "n": 42,
+    "mean": 0.5714285714285714,
+    "ci": [
+     0.42857142857142855,
+     0.7380952380952381
+    ]
+   },
+   "hit5": {
+    "n": 42,
+    "mean": 0.7380952380952381,
+    "ci": [
+     0.5952380952380952,
+     0.8571428571428571
+    ]
+   },
+   "recall10": {
+    "n": 42,
+    "mean": 0.6916666666666667,
+    "ci": [
+     0.567063492063492,
+     0.8083333333333333
+    ]
+   },
+   "mrr": {
+    "n": 42,
+    "mean": 0.6489040060468632,
+    "ci": [
+     0.5211262282690855,
+     0.7806122448979591
+    ]
+   },
+   "bytes": 1466,
+   "usd": 0.0034348333333333336
+  },
+  "explorer_deep_warm|commit": {
+   "n": 42,
+   "hit1": {
+    "n": 42,
+    "mean": 0.5714285714285714,
+    "ci": [
+     0.42857142857142855,
+     0.7380952380952381
+    ]
+   },
+   "hit5": {
+    "n": 42,
+    "mean": 0.7380952380952381,
+    "ci": [
+     0.5952380952380952,
+     0.8571428571428571
+    ]
+   },
+   "recall10": {
+    "n": 42,
+    "mean": 0.6916666666666667,
+    "ci": [
+     0.567063492063492,
+     0.8083333333333333
+    ]
+   },
+   "mrr": {
+    "n": 42,
+    "mean": 0.6489040060468632,
+    "ci": [
+     0.5211262282690855,
+     0.7806122448979591
+    ]
+   },
+   "bytes": 1449,
+   "usd": 0
+  },
+  "explorer_deep_warm|all": {
+   "n": 42,
+   "hit1": {
+    "n": 42,
+    "mean": 0.5714285714285714,
+    "ci": [
+     0.42857142857142855,
+     0.7380952380952381
+    ]
+   },
+   "hit5": {
+    "n": 42,
+    "mean": 0.7380952380952381,
+    "ci": [
+     0.5952380952380952,
+     0.8571428571428571
+    ]
+   },
+   "recall10": {
+    "n": 42,
+    "mean": 0.6916666666666667,
+    "ci": [
+     0.567063492063492,
+     0.8083333333333333
+    ]
+   },
+   "mrr": {
+    "n": 42,
+    "mean": 0.6489040060468632,
+    "ci": [
+     0.5211262282690855,
+     0.7806122448979591
+    ]
+   },
+   "bytes": 1449,
+   "usd": 0
+  },
+  "graph_name|symbol": {
+   "n": 24,
+   "hit1": {
+    "n": 24,
+    "mean": 0.9166666666666666,
+    "ci": [
+     0.7916666666666666,
+     1
+    ]
+   },
+   "hit5": {
+    "n": 24,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "recall10": {
+    "n": 24,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "mrr": {
+    "n": 24,
+    "mean": 0.9513888888888888,
+    "ci": [
+     0.875,
+     1
+    ]
+   },
+   "bytes": 1181,
+   "usd": 0
+  },
+  "graph_name|file": {
+   "n": 18,
+   "hit1": {
+    "n": 18,
+    "mean": 0.8888888888888888,
+    "ci": [
+     0.7222222222222222,
+     1
+    ]
+   },
+   "hit5": {
+    "n": 18,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "recall10": {
+    "n": 18,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "mrr": {
+    "n": 18,
+    "mean": 0.9444444444444444,
+    "ci": [
+     0.8611111111111112,
+     1
+    ]
+   },
+   "bytes": 1557,
+   "usd": 0
+  },
+  "graph_name|all": {
+   "n": 42,
+   "hit1": {
+    "n": 42,
+    "mean": 0.9047619047619048,
+    "ci": [
+     0.8095238095238095,
+     0.9761904761904762
+    ]
+   },
+   "hit5": {
+    "n": 42,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "recall10": {
+    "n": 42,
+    "mean": 1,
+    "ci": [
+     1,
+     1
+    ]
+   },
+   "mrr": {
+    "n": 42,
+    "mean": 0.9484126984126983,
+    "ci": [
+     0.8968253968253967,
+     0.9880952380952381
+    ]
+   },
+   "bytes": 1342,
+   "usd": 0
+  }
+ },
+ "latency": {
+  "trad|commit": {
+   "median": 207,
+   "p90": 252,
+   "mean": 176
+  },
+  "trad|symbol": {
+   "median": 34,
+   "p90": 40,
+   "mean": 30
+  },
+  "trad|file": {
+   "median": 34,
+   "p90": 41,
+   "mean": 30
+  },
+  "trad|all": {
+   "median": 57,
+   "p90": 245,
+   "mean": 103
+  },
+  "graph_bm25|commit": {
+   "median": 10,
+   "p90": 15,
+   "mean": 11
+  },
+  "graph_bm25|symbol": {
+   "median": 9,
+   "p90": 10,
+   "mean": 9
+  },
+  "graph_bm25|file": {
+   "median": 9,
+   "p90": 12,
+   "mean": 9
+  },
+  "graph_bm25|all": {
+   "median": 9,
+   "p90": 14,
+   "mean": 10
+  },
+  "explorer_cold|commit": {
+   "median": 326,
+   "p90": 404,
+   "mean": 284
+  },
+  "explorer_cold|symbol": {
+   "median": 86,
+   "p90": 106,
+   "mean": 82
+  },
+  "explorer_cold|file": {
+   "median": 88,
+   "p90": 107,
+   "mean": 83
+  },
+  "explorer_cold|all": {
+   "median": 111,
+   "p90": 389,
+   "mean": 183
+  },
+  "explorer_warm|commit": {
+   "median": 20,
+   "p90": 25,
+   "mean": 20
+  },
+  "explorer_warm|symbol": {
+   "median": 22,
+   "p90": 27,
+   "mean": 22
+  },
+  "explorer_warm|file": {
+   "median": 24,
+   "p90": 28,
+   "mean": 24
+  },
+  "explorer_warm|all": {
+   "median": 22,
+   "p90": 27,
+   "mean": 22
+  },
+  "graph_name|symbol": {
+   "median": 7,
+   "p90": 8,
+   "mean": 7
+  },
+  "graph_name|file": {
+   "median": 7,
+   "p90": 8,
+   "mean": 7
+  },
+  "graph_name|all": {
+   "median": 7,
+   "p90": 8,
+   "mean": 7
+  }
+ },
+ "paired": {
+  "explorer_cold vs trad|commit": {
+   "n": 42,
+   "win": 13,
+   "tie": 19,
+   "loss": 10,
+   "meanDeltaMrr": -0.01339341629589309,
+   "ci": [
+    -0.11145450307878438,
+    0.08486282727215941
+   ]
+  },
+  "explorer_cold vs trad|symbol": {
+   "n": 24,
+   "win": 17,
+   "tie": 7,
+   "loss": 0,
+   "meanDeltaMrr": 0.40833333333333327,
+   "ci": [
+    0.2951388888888889,
+    0.5125000000000001
+   ]
+  },
+  "explorer_cold vs trad|file": {
+   "n": 18,
+   "win": 7,
+   "tie": 11,
+   "loss": 0,
+   "meanDeltaMrr": 0.19444444444444445,
+   "ci": [
+    0.08333333333333333,
+    0.3055555555555556
+   ]
+  },
+  "explorer_cold vs trad|all": {
+   "n": 84,
+   "win": 37,
+   "tie": 37,
+   "loss": 10,
+   "meanDeltaMrr": 0.15163662518538681,
+   "ci": [
+    0.0810748230916298,
+    0.224909472335943
+   ]
+  },
+  "explorer_cold vs graph_bm25|commit": {
+   "n": 42,
+   "win": 13,
+   "tie": 18,
+   "loss": 11,
+   "meanDeltaMrr": -0.012859032501889647,
+   "ci": [
+    -0.1161281179138322,
+    0.08912509448223734
+   ]
+  },
+  "explorer_cold vs graph_bm25|symbol": {
+   "n": 24,
+   "win": 0,
+   "tie": 23,
+   "loss": 1,
+   "meanDeltaMrr": -0.020833333333333332,
+   "ci": [
+    -0.0625,
+    0
+   ]
+  },
+  "explorer_cold vs graph_bm25|file": {
+   "n": 18,
+   "win": 2,
+   "tie": 16,
+   "loss": 0,
+   "meanDeltaMrr": 0.1111111111111111,
+   "ci": [
+    0,
+    0.2777777777777778
+   ]
+  },
+  "explorer_cold vs graph_bm25|all": {
+   "n": 84,
+   "win": 15,
+   "tie": 57,
+   "loss": 12,
+   "meanDeltaMrr": 0.011427626606198034,
+   "ci": [
+    -0.04906934996220712,
+    0.08033824640967499
+   ]
+  },
+  "explorer_deep vs trad|commit": {
+   "n": 42,
+   "win": 27,
+   "tie": 12,
+   "loss": 3,
+   "meanDeltaMrr": 0.4108790704765938,
+   "ci": [
+    0.26969184434907567,
+    0.554664429874514
+   ]
+  },
+  "explorer_deep vs trad|all": {
+   "n": 42,
+   "win": 27,
+   "tie": 12,
+   "loss": 3,
+   "meanDeltaMrr": 0.4108790704765938,
+   "ci": [
+    0.26969184434907567,
+    0.554664429874514
+   ]
+  },
+  "explorer_deep vs graph_bm25|commit": {
+   "n": 42,
+   "win": 27,
+   "tie": 10,
+   "loss": 5,
+   "meanDeltaMrr": 0.4114134542705971,
+   "ci": [
+    0.25383597883597886,
+    0.5724867724867725
+   ]
+  },
+  "explorer_deep vs graph_bm25|all": {
+   "n": 42,
+   "win": 27,
+   "tie": 10,
+   "loss": 5,
+   "meanDeltaMrr": 0.4114134542705971,
+   "ci": [
+    0.25383597883597886,
+    0.5724867724867725
+   ]
+  },
+  "explorer_deep vs explorer_cold|commit": {
+   "n": 42,
+   "win": 29,
+   "tie": 9,
+   "loss": 4,
+   "meanDeltaMrr": 0.4242724867724868,
+   "ci": [
+    0.28973922902494337,
+    0.5626322751322752
+   ]
+  },
+  "explorer_deep vs explorer_cold|all": {
+   "n": 42,
+   "win": 29,
+   "tie": 9,
+   "loss": 4,
+   "meanDeltaMrr": 0.4242724867724868,
+   "ci": [
+    0.28973922902494337,
+    0.5626322751322752
+   ]
+  },
+  "graph_name vs explorer_cold|symbol": {
+   "n": 24,
+   "win": 1,
+   "tie": 21,
+   "loss": 2,
+   "meanDeltaMrr": -0.02777777777777778,
+   "ci": [
+    -0.11805555555555558,
+    0.041666666666666664
+   ]
+  },
+  "graph_name vs explorer_cold|file": {
+   "n": 18,
+   "win": 0,
+   "tie": 16,
+   "loss": 2,
+   "meanDeltaMrr": -0.05555555555555555,
+   "ci": [
+    -0.1388888888888889,
+    0
+   ]
+  },
+  "graph_name vs explorer_cold|all": {
+   "n": 42,
+   "win": 1,
+   "tie": 37,
+   "loss": 4,
+   "meanDeltaMrr": -0.03968253968253969,
+   "ci": [
+    -0.09523809523809523,
+    0.011904761904761904
+   ]
+  }
+ },
+ "cache": {
+  "gym-app": {
+   "requests": 300,
+   "hits": 272,
+   "hitRate": 0.907,
+   "medianHitMs": 27,
+   "medianMissMs": 277,
+   "totalMsWithCache": 13969,
+   "misses": 28
+  },
+  "bridge-gym": {
+   "requests": 300,
+   "hits": 272,
+   "hitRate": 0.907,
+   "medianHitMs": 20,
+   "medianMissMs": 129,
+   "totalMsWithCache": 8479,
+   "misses": 28
+  },
+  "vidar-app": {
+   "requests": 300,
+   "hits": 272,
+   "hitRate": 0.907,
+   "medianHitMs": 22,
+   "medianMissMs": 127,
+   "totalMsWithCache": 11954,
+   "misses": 28
+  }
+ },
+ "invalidation": {
+  "edit_cited": {
+   "ok": 36,
+   "n": 36
+  },
+  "new_file": {
+   "ok": 36,
+   "n": 36
+  },
+  "unrelated_edit": {
+   "ok": 36,
+   "n": 36
+  },
+  "model_survives_new_file": {
+   "ok": 18,
+   "n": 18
+  },
+  "model_expires_on_edit": {
+   "ok": 18,
+   "n": 18
+  }
+ },
+ "agents": {
+  "traditional": {
+   "n": 42,
+   "errors": 0,
+   "hit1": {
+    "n": 42,
+    "mean": 0.6190476190476191,
+    "ci": [
+     0.47619047619047616,
+     0.7619047619047619
+    ]
+   },
+   "hit5": {
+    "n": 42,
+    "mean": 0.8333333333333334,
+    "ci": [
+     0.7142857142857143,
+     0.9523809523809523
+    ]
+   },
+   "recall": {
+    "n": 42,
+    "mean": 0.6869047619047619,
+    "ci": [
+     0.5678571428571428,
+     0.7988095238095237
+    ]
+   },
+   "mrr": {
+    "n": 42,
+    "mean": 0.6966553287981858,
+    "ci": [
+     0.5762471655328797,
+     0.8216553287981858
+    ]
+   },
+   "usd": {
+    "n": 42,
+    "mean": 0.00404714119047619,
+    "ci": [
+     0.003671817857142856,
+     0.004448603571428571
+    ]
+   },
+   "turns": {
+    "n": 42,
+    "mean": 7.071428571428571,
+    "ci": [
+     6.428571428571429,
+     7.785714285714286
+    ]
+   },
+   "toolCalls": {
+    "n": 42,
+    "mean": 6.071428571428571,
+    "ci": [
+     5.428571428571429,
+     6.785714285714286
+    ]
+   },
+   "sec": {
+    "n": 42,
+    "mean": 14.963333333333331,
+    "ci": [
+     14.029904761904758,
+     16.093857142857146
+    ]
+   },
+   "totalUsd": 0.16997992999999997
+  },
+  "graph": {
+   "n": 42,
+   "errors": 0,
+   "hit1": {
+    "n": 42,
+    "mean": 0.5,
+    "ci": [
+     0.35714285714285715,
+     0.6666666666666666
+    ]
+   },
+   "hit5": {
+    "n": 42,
+    "mean": 0.7619047619047619,
+    "ci": [
+     0.6428571428571429,
+     0.8809523809523809
+    ]
+   },
+   "recall": {
+    "n": 42,
+    "mean": 0.5801587301587301,
+    "ci": [
+     0.4599206349206349,
+     0.6948412698412699
+    ]
+   },
+   "mrr": {
+    "n": 42,
+    "mean": 0.6129251700680273,
+    "ci": [
+     0.4841269841269841,
+     0.7456916099773243
+    ]
+   },
+   "usd": {
+    "n": 42,
+    "mean": 0.00643170142857143,
+    "ci": [
+     0.0056836773809523814,
+     0.007301874523809524
+    ]
+   },
+   "turns": {
+    "n": 42,
+    "mean": 11.071428571428571,
+    "ci": [
+     9.619047619047619,
+     12.69047619047619
+    ]
+   },
+   "toolCalls": {
+    "n": 42,
+    "mean": 10.071428571428571,
+    "ci": [
+     8.619047619047619,
+     11.69047619047619
+    ]
+   },
+   "sec": {
+    "n": 42,
+    "mean": 21.128404761904765,
+    "ci": [
+     17.985,
+     25.599880952380957
+    ]
+   },
+   "totalUsd": 0.27013146000000005
+  },
+  "explorer": {
+   "n": 42,
+   "errors": 0,
+   "hit1": {
+    "n": 42,
+    "mean": 0.5238095238095238,
+    "ci": [
+     0.38095238095238093,
+     0.6904761904761905
+    ]
+   },
+   "hit5": {
+    "n": 42,
+    "mean": 0.8095238095238095,
+    "ci": [
+     0.6904761904761905,
+     0.9047619047619048
+    ]
+   },
+   "recall": {
+    "n": 42,
+    "mean": 0.6884920634920636,
+    "ci": [
+     0.577777777777778,
+     0.7924603174603174
+    ]
+   },
+   "mrr": {
+    "n": 42,
+    "mean": 0.6436507936507937,
+    "ci": [
+     0.5214285714285715,
+     0.7666666666666667
+    ]
+   },
+   "usd": {
+    "n": 42,
+    "mean": 0.006097173809523808,
+    "ci": [
+     0.005544512857142857,
+     0.006644045714285714
+    ]
+   },
+   "turns": {
+    "n": 42,
+    "mean": 6.166666666666667,
+    "ci": [
+     5.690476190476191,
+     6.642857142857143
+    ]
+   },
+   "toolCalls": {
+    "n": 42,
+    "mean": 5.166666666666667,
+    "ci": [
+     4.690476190476191,
+     5.642857142857143
+    ]
+   },
+   "sec": {
+    "n": 42,
+    "mean": 26.14064285714286,
+    "ci": [
+     23.963309523809528,
+     28.838214285714294
+    ]
+   },
+   "totalUsd": 0.25608129999999996
+  },
+  "explorer_cached": {
+   "n": 42,
+   "errors": 0,
+   "hit1": {
+    "n": 42,
+    "mean": 0.5952380952380952,
+    "ci": [
+     0.4523809523809524,
+     0.7380952380952381
+    ]
+   },
+   "hit5": {
+    "n": 42,
+    "mean": 0.8571428571428571,
+    "ci": [
+     0.7380952380952381,
+     0.9523809523809523
+    ]
+   },
+   "recall": {
+    "n": 42,
+    "mean": 0.6964285714285716,
+    "ci": [
+     0.5916666666666669,
+     0.7888888888888891
+    ]
+   },
+   "mrr": {
+    "n": 42,
+    "mean": 0.6982426303854875,
+    "ci": [
+     0.5815759637188207,
+     0.8158730158730159
+    ]
+   },
+   "usd": {
+    "n": 42,
+    "mean": 0.0036236438095238097,
+    "ci": [
+     0.002696898571428571,
+     0.0047109340476190475
+    ]
+   },
+   "turns": {
+    "n": 42,
+    "mean": 5.333333333333333,
+    "ci": [
+     4.880952380952381,
+     5.833333333333333
+    ]
+   },
+   "toolCalls": {
+    "n": 42,
+    "mean": 4.333333333333333,
+    "ci": [
+     3.880952380952381,
+     4.833333333333333
+    ]
+   },
+   "sec": {
+    "n": 42,
+    "mean": 17.01242857142857,
+    "ci": [
+     13.827476190476188,
+     20.835333333333327
+    ]
+   },
+   "totalUsd": 0.15219304
+  }
+ },
+ "agentsPaired": {
+  "explorer vs traditional|mrr": {
+   "n": 42,
+   "mean": -0.05300453514739229,
+   "ci": [
+    -0.1787981859410431,
+    0.07182539682539683
+   ]
+  },
+  "explorer vs traditional|usd": {
+   "n": 42,
+   "mean": 0.0020500326190476185,
+   "ci": [
+    0.0014251264285714278,
+    0.0026383940476190477
+   ]
+  },
+  "explorer vs traditional|sec": {
+   "n": 42,
+   "mean": 11.177309523809525,
+   "ci": [
+    9.15142857142857,
+    13.715904761904767
+   ]
+  },
+  "explorer vs traditional|turns": {
+   "n": 42,
+   "mean": -0.9047619047619048,
+   "ci": [
+    -1.8571428571428572,
+    0.047619047619047616
+   ]
+  },
+  "graph vs traditional|mrr": {
+   "n": 42,
+   "mean": -0.08373015873015872,
+   "ci": [
+    -0.1965986394557823,
+    0.024036281179138332
+   ]
+  },
+  "graph vs traditional|usd": {
+   "n": 42,
+   "mean": 0.002384560238095239,
+   "ci": [
+    0.0016115871428571424,
+    0.0032363809523809524
+   ]
+  },
+  "graph vs traditional|sec": {
+   "n": 42,
+   "mean": 6.165071428571428,
+   "ci": [
+    3.1077619047619045,
+    10.558047619047619
+   ]
+  },
+  "graph vs traditional|turns": {
+   "n": 42,
+   "mean": 4,
+   "ci": [
+    2.5952380952380953,
+    5.571428571428571
+   ]
+  },
+  "explorer vs graph|mrr": {
+   "n": 42,
+   "mean": 0.030725623582766447,
+   "ci": [
+    -0.08219954648526079,
+    0.14206349206349206
+   ]
+  },
+  "explorer vs graph|usd": {
+   "n": 42,
+   "mean": -0.0003345276190476191,
+   "ci": [
+    -0.00140754,
+    0.0006874780952380955
+   ]
+  },
+  "explorer vs graph|sec": {
+   "n": 42,
+   "mean": 5.012238095238096,
+   "ci": [
+    -0.12495238095238144,
+    9.264166666666664
+   ]
+  },
+  "explorer vs graph|turns": {
+   "n": 42,
+   "mean": -4.904761904761905,
+   "ci": [
+    -6.785714285714286,
+    -3.261904761904762
+   ]
+  },
+  "explorer_cached vs explorer|mrr": {
+   "n": 42,
+   "mean": 0.05459183673469387,
+   "ci": [
+    -0.030725623582766436,
+    0.1453514739229025
+   ]
+  },
+  "explorer_cached vs explorer|usd": {
+   "n": 42,
+   "mean": -0.0024735300000000003,
+   "ci": [
+    -0.00348115142857143,
+    -0.0013763976190476184
+   ]
+  },
+  "explorer_cached vs explorer|sec": {
+   "n": 42,
+   "mean": -9.128214285714288,
+   "ci": [
+    -13.206142857142854,
+    -5.114380952380951
+   ]
+  },
+  "explorer_cached vs explorer|turns": {
+   "n": 42,
+   "mean": -0.8333333333333334,
+   "ci": [
+    -1.4761904761904763,
+    -0.23809523809523808
+   ]
+  },
+  "explorer_cached vs traditional|mrr": {
+   "n": 42,
+   "mean": 0.0015873015873015869,
+   "ci": [
+    -0.09126984126984129,
+    0.09880952380952382
+   ]
+  },
+  "explorer_cached vs traditional|usd": {
+   "n": 42,
+   "mean": -0.00042349738095238097,
+   "ci": [
+    -0.0012915109523809524,
+    0.000510107380952381
+   ]
+  },
+  "explorer_cached vs traditional|sec": {
+   "n": 42,
+   "mean": 2.0490952380952385,
+   "ci": [
+    -1.0029999999999997,
+    5.581857142857143
+   ]
+  },
+  "explorer_cached vs traditional|turns": {
+   "n": 42,
+   "mean": -1.7380952380952381,
+   "ci": [
+    -2.5238095238095237,
+    -0.9761904761904762
+   ]
+  }
+ },
+ "projection": {
+  "traditional": {
+   "haiku": 0.00404714119047619,
+   "sonnetAgent": 0.0809428238095238,
+   "nested": 0
+  },
+  "graph": {
+   "haiku": 0.00643170142857143,
+   "sonnetAgent": 0.12863402857142858,
+   "nested": 0
+  },
+  "explorer": {
+   "haiku": 0.00609717380952381,
+   "sonnetAgent": 0.0606734523809524,
+   "nested": 0.003224738095238095
+  },
+  "explorer_cached": {
+   "haiku": 0.00362364380952381,
+   "sonnetAgent": 0.042199090476190484,
+   "nested": 0.001593357142857143
+  }
+ },
+ "reuse": {
+  "A": {
+   "trad": {
+    "n": 36,
+    "recall": {
+     "n": 36,
+     "mean": 0.07870370370370369,
+     "ci": [
+      0.009259259259259259,
+      0.16666666666666666
+     ]
+    },
+    "any": {
+     "n": 36,
+     "mean": 0.1111111111111111,
+     "ci": [
+      0.027777777777777776,
+      0.2222222222222222
+     ]
+    },
+    "mrr": {
+     "n": 36,
+     "mean": 0.04606481481481481,
+     "ci": [
+      0.003472222222222222,
+      0.11273148148148149
+     ]
+    },
+    "ms": 272
+   },
+   "graph_bm25": {
+    "n": 36,
+    "recall": {
+     "n": 36,
+     "mean": 0.08564814814814814,
+     "ci": [
+      0.016203703703703703,
+      0.1736111111111111
+     ]
+    },
+    "any": {
+     "n": 36,
+     "mean": 0.1388888888888889,
+     "ci": [
+      0.027777777777777776,
+      0.25
+     ]
+    },
+    "mrr": {
+     "n": 36,
+     "mean": 0.02919973544973545,
+     "ci": [
+      0.006944444444444444,
+      0.05582010582010582
+     ]
+    },
+    "ms": 41
+   },
+   "explorer_deep": {
+    "n": 36,
+    "recall": {
+     "n": 36,
+     "mean": 0.27314814814814814,
+     "ci": [
+      0.1527777777777778,
+      0.41203703703703703
+     ]
+    },
+    "any": {
+     "n": 36,
+     "mean": 0.3611111111111111,
+     "ci": [
+      0.2222222222222222,
+      0.5277777777777778
+     ]
+    },
+    "mrr": {
+     "n": 36,
+     "mean": 0.1849537037037037,
+     "ci": [
+      0.0912037037037037,
+      0.29953703703703705
+     ]
+    },
+    "ms": 10922
+   },
+   "reuse_graph": {
+    "n": 36,
+    "recall": {
+     "n": 36,
+     "mean": 0.1412037037037037,
+     "ci": [
+      0.04398148148148148,
+      0.25231481481481477
+     ]
+    },
+    "any": {
+     "n": 36,
+     "mean": 0.19444444444444445,
+     "ci": [
+      0.08333333333333333,
+      0.3333333333333333
+     ]
+    },
+    "mrr": {
+     "n": 36,
+     "mean": 0.13055555555555556,
+     "ci": [
+      0.041666666666666664,
+      0.2361111111111111
+     ]
+    },
+    "ms": 1479
+   },
+   "reuse_deep": {
+    "n": 36,
+    "recall": {
+     "n": 36,
+     "mean": 0.28935185185185186,
+     "ci": [
+      0.162037037037037,
+      0.4328703703703704
+     ]
+    },
+    "any": {
+     "n": 36,
+     "mean": 0.3611111111111111,
+     "ci": [
+      0.2222222222222222,
+      0.5277777777777778
+     ]
+    },
+    "mrr": {
+     "n": 36,
+     "mean": 0.22546296296296298,
+     "ci": [
+      0.1111111111111111,
+      0.35
+     ]
+    },
+    "ms": 13692
+   }
+  },
+  "pairsA": {
+   "reuse_deep vs trad": {
+    "n": 36,
+    "mean": 0.21064814814814814,
+    "ci": [
+     0.0787037037037037,
+     0.3587962962962963
+    ],
+    "win": 11,
+    "tie": 23,
+    "loss": 2
+   },
+   "reuse_deep vs graph_bm25": {
+    "n": 36,
+    "mean": 0.2037037037037037,
+    "ci": [
+     0.08333333333333333,
+     0.34259259259259256
+    ],
+    "win": 8,
+    "tie": 28,
+    "loss": 0
+   },
+   "reuse_deep vs explorer_deep": {
+    "n": 36,
+    "mean": 0.016203703703703706,
+    "ci": [
+     -0.1111111111111111,
+     0.1527777777777778
+    ],
+    "win": 5,
+    "tie": 26,
+    "loss": 5
+   },
+   "reuse_graph vs graph_bm25": {
+    "n": 36,
+    "mean": 0.05555555555555555,
+    "ci": [
+     0,
+     0.1388888888888889
+    ],
+    "win": 2,
+    "tie": 34,
+    "loss": 0
+   },
+   "reuse_graph vs trad": {
+    "n": 36,
+    "mean": 0.0625,
+    "ci": [
+     -0.018518518518518514,
+     0.15740740740740738
+    ],
+    "win": 5,
+    "tie": 29,
+    "loss": 2
+   },
+   "reuse_deep vs reuse_graph": {
+    "n": 36,
+    "mean": 0.14814814814814814,
+    "ci": [
+     0.037037037037037035,
+     0.2777777777777778
+    ],
+    "win": 6,
+    "tie": 30,
+    "loss": 0
+   }
+  },
+  "B": {
+   "rename": {
+    "n": 36,
+    "flagged": {
+     "n": 36,
+     "mean": 1,
+     "ci": [
+      1,
+      1
+     ]
+    },
+    "foundOriginal": {
+     "n": 36,
+     "mean": 1,
+     "ci": [
+      1,
+      1
+     ]
+    },
+    "duplicate": {
+     "n": 36,
+     "mean": 1,
+     "ci": [
+      1,
+      1
+     ]
+    },
+    "medianJaccard": 1
+   },
+   "noise": {
+    "n": 36,
+    "flagged": {
+     "n": 36,
+     "mean": 1,
+     "ci": [
+      1,
+      1
+     ]
+    },
+    "foundOriginal": {
+     "n": 36,
+     "mean": 1,
+     "ci": [
+      1,
+      1
+     ]
+    },
+    "duplicate": {
+     "n": 36,
+     "mean": 0.8333333333333334,
+     "ci": [
+      0.6944444444444444,
+      0.9444444444444444
+     ]
+    },
+    "medianJaccard": 0.78
+   },
+   "prune": {
+    "n": 36,
+    "flagged": {
+     "n": 36,
+     "mean": 1,
+     "ci": [
+      1,
+      1
+     ]
+    },
+    "foundOriginal": {
+     "n": 36,
+     "mean": 1,
+     "ci": [
+      1,
+      1
+     ]
+    },
+    "duplicate": {
+     "n": 36,
+     "mean": 0.7222222222222222,
+     "ci": [
+      0.5833333333333334,
+      0.8611111111111112
+     ]
+    },
+    "medianJaccard": 0.68
+   },
+   "foreign": {
+    "n": 36,
+    "flagged": {
+     "n": 36,
+     "mean": 0.027777777777777776,
+     "ci": [
+      0,
+      0.08333333333333333
+     ]
+    },
+    "foundOriginal": {
+     "n": 36,
+     "mean": 0,
+     "ci": [
+      0,
+      0
+     ]
+    },
+    "duplicate": {
+     "n": 36,
+     "mean": 0,
+     "ci": [
+      0,
+      0
+     ]
+    },
+    "medianJaccard": 0
+   }
+  }
+ },
+ "reuseAgents": {
+  "arms": {
+   "plain": {
+    "n": 18,
+    "counts": {
+     "reutilizó": 5,
+     "duplicó": 7,
+     "independiente": 6
+    },
+    "reused": {
+     "n": 18,
+     "mean": 0.2777777777777778,
+     "ci": [
+      0.1111111111111111,
+      0.5
+     ]
+    },
+    "duplicated": {
+     "n": 18,
+     "mean": 0.3888888888888889,
+     "ci": [
+      0.16666666666666666,
+      0.6111111111111112
+     ]
+    },
+    "usd": 0.004323582222222223,
+    "turns": 7.666666666666667,
+    "sec": 19.19011111111112,
+    "lines": 38.94444444444444,
+    "usedExplore": 0,
+    "usedCheck": 0
+   },
+   "guided": {
+    "n": 18,
+    "counts": {
+     "reutilizó": 12,
+     "duplicó": 4,
+     "independiente": 2
+    },
+    "reused": {
+     "n": 18,
+     "mean": 0.6666666666666666,
+     "ci": [
+      0.4444444444444444,
+      0.8888888888888888
+     ]
+    },
+    "duplicated": {
+     "n": 18,
+     "mean": 0.2222222222222222,
+     "ci": [
+      0.05555555555555555,
+      0.4444444444444444
+     ]
+    },
+    "usd": 0.0038821299999999997,
+    "turns": 8.11111111111111,
+    "sec": 23.121888888888886,
+    "lines": 31.166666666666668,
+    "usedExplore": 18,
+    "usedCheck": 18
+   }
+  },
+  "paired": {
+   "n": 18,
+   "reusedDelta": {
+    "mean": 0.3888888888888889,
+    "ci": [
+     0.1111111111111111,
+     0.6666666666666666
+    ]
+   },
+   "duplicatedDelta": {
+    "mean": -0.16666666666666666,
+    "ci": [
+     -0.4444444444444444,
+     0.1111111111111111
+    ]
+   },
+   "transitions": {
+    "reutilizó → reutilizó": 4,
+    "duplicó → reutilizó": 5,
+    "independiente → reutilizó": 3,
+    "independiente → duplicó": 2,
+    "reutilizó → independiente": 1,
+    "duplicó → duplicó": 2,
+    "independiente → independiente": 1
+   }
+  },
+  "targets": 18
+ }
+};
+const COL={trad:'var(--s1)',graph_bm25:'var(--s2)',graph_name:'var(--s2)',explorer_cold:'var(--s3)',explorer_warm:'var(--s3)',explorer_deep:'var(--s4)',explorer_deep_warm:'var(--s4)'};
+const NAME={trad:'rg + fd',graph_bm25:'grafo (BM25)',graph_name:'grafo (nombre)',explorer_cold:'explorer script',explorer_warm:'explorer caché',explorer_deep:'explorer --deep',explorer_deep_warm:'--deep en caché'};
+const f2=x=>x.toFixed(2);const ci=s=>`${f2(s.mean)} [${f2(s.ci[0])}–${f2(s.ci[1])}]`;
+const tip=document.getElementById('tip');
+function bindTip(el,html){el.addEventListener('mousemove',e=>{tip.innerHTML=html;tip.style.display='block';tip.style.left=Math.min(e.clientX+12,innerWidth-270)+'px';tip.style.top=(e.clientY+14)+'px'});el.addEventListener('mouseleave',()=>tip.style.display='none')}
+function bar(label,stat,color,max=1,extra=''){
+ const row=document.createElement('div');row.className='row';
+ const lo=Math.max(0,stat.ci[0]/max*100),hi=Math.min(100,stat.ci[1]/max*100),w=Math.min(100,stat.mean/max*100);
+ row.innerHTML=`<span class="lab" title="${label}">${label}</span><span class="track"><span class="fill" style="width:${w}%;background:${color}"></span><span class="whisk" style="left:${lo}%;width:${hi-lo}%"></span><span class="cap" style="left:${lo}%"></span><span class="cap" style="left:calc(${hi}% - 2px)"></span></span><span class="val">${f2(stat.mean)}${extra}</span>`;
+ bindTip(row,`<b>${label}</b><br>media ${f2(stat.mean)}<br>IC 95%: ${f2(stat.ci[0])} – ${f2(stat.ci[1])}<br>n = ${stat.n}`);return row}
+function legend(id,keys){document.getElementById(id).innerHTML=keys.map(k=>`<span><i style="background:${COL[k]||'var(--s1)'}"></i>${NAME[k]||k}</span>`).join('')}
+// 1 recuperación
+legend('leg1',['trad','graph_bm25','explorer_cold','explorer_deep']);
+const KINDS=[['commit','Tareas (commits)'],['symbol','Símbolos exactos'],['file','Nombres de archivo']];
+const ret=document.getElementById('retrieval');
+for(const [k,t] of KINDS){const p=document.createElement('div');p.className='panel';p.innerHTML=`<h3 style="margin-top:0">${t}</h3><div class="bars"></div>`;
+ const b=p.querySelector('.bars');
+ const ms=k==='commit'?['trad','graph_bm25','explorer_cold','explorer_deep']:['trad','graph_bm25','graph_name','explorer_cold'];
+ for(const m of ms){const r=S.retrieval[`${m}|${k}`];if(r)b.appendChild(bar(NAME[m],r.mrr,COL[m],1))}
+ ret.appendChild(p)}
+const tr=document.getElementById('t-ret');tr.innerHTML='<tr><th>método</th><th>tipo</th><th>n</th><th>acierta 1º</th><th>en top 5</th><th>recall@10</th><th>MRR</th><th>bytes/resp.</th></tr>';
+for(const k of ['commit','symbol','file'])for(const m of Object.keys(NAME)){const r=S.retrieval[`${m}|${k}`];if(r)tr.innerHTML+=`<tr><td>${NAME[m]}</td><td>${k}</td><td>${r.n}</td><td>${ci(r.hit1)}</td><td>${ci(r.hit5)}</td><td>${ci(r.recall10)}</td><td>${ci(r.mrr)}</td><td>${r.bytes}</td></tr>`}
+const tp=document.getElementById('t-pair');tp.innerHTML='<tr><th>comparación</th><th>tipo</th><th>n</th><th>gana / empata / pierde</th><th>Δ MRR [IC 95%]</th></tr>';
+for(const [key,v] of Object.entries(S.paired)){const [c,k]=key.split('|');if(k==='all')continue;const [a,b]=c.split(' vs ');const sig=v.ci[0]>0?'ok':v.ci[1]<0?'no':'';
+ tp.innerHTML+=`<tr><td>${NAME[a]} vs ${NAME[b]}</td><td>${k}</td><td>${v.n}</td><td>${v.win} / ${v.tie} / ${v.loss}</td><td class="${sig}">${v.meanDeltaMrr>=0?'+':''}${v.meanDeltaMrr.toFixed(2)} [${v.ci[0].toFixed(2)}, ${v.ci[1].toFixed(2)}]</td></tr>`}
+// 2 latencia
+const tl=document.getElementById('t-lat');tl.innerHTML='<tr><th>método</th><th>tareas</th><th>símbolos</th><th>archivos</th></tr>';
+for(const m of ['trad','graph_bm25','graph_name','explorer_cold','explorer_warm']){const g=k=>{const x=S.latency[`${m}|${k}`];return x?`${x.median} ms <span class="small">(p90 ${x.p90})</span>`:'—'};tl.innerHTML+=`<tr><td>${NAME[m]}</td><td>${g('commit')}</td><td>${g('symbol')}</td><td>${g('file')}</td></tr>`}
+// 3 caché
+const simE=Object.entries(S.cache);const avg=k=>simE.reduce((s,[,v])=>s+v[k],0)/simE.length;
+document.getElementById('sim').innerHTML=`<table><tr><td>Tasa de aciertos</td><td><b>${(avg('hitRate')*100).toFixed(1)}%</b></td></tr><tr><td>Mediana de un acierto</td><td>${Math.round(avg('medianHitMs'))} ms</td></tr><tr><td>Mediana de un fallo</td><td>${Math.round(avg('medianMissMs'))} ms</td></tr></table>`;
+const ti=document.getElementById('t-inv');const IL={edit_cited:'Se edita un archivo citado → deja de ser acierto',new_file:'Aparece un archivo que coincide → deja de ser acierto y se ve',unrelated_edit:'Se edita un archivo no citado → sigue siendo acierto',model_survives_new_file:'Respuesta de Haiku + archivo nuevo → sigue siendo acierto',model_expires_on_edit:'Respuesta de Haiku + se edita un archivo citado → caduca'};
+ti.innerHTML='<tr><th>prueba</th><th>correctas</th></tr>'+Object.entries(S.invalidation).map(([k,v])=>`<tr><td style="white-space:normal">${IL[k]}</td><td class="${v.ok===v.n?'ok':'no'}">${v.ok}/${v.n}</td></tr>`).join('');
+// 4 agentes
+const AK=['traditional','graph','explorer','explorer_cached'];const AN={traditional:'rg + fd + Read',graph:'grafo + Read',explorer:'explorer',explorer_cached:'explorer (caché caliente)'};const AC={traditional:'var(--s1)',graph:'var(--s2)',explorer:'var(--s3)',explorer_cached:'var(--s4)'};
+document.getElementById('leg2').innerHTML=AK.filter(a=>S.agents[a]).map(a=>`<span><i style="background:${AC[a]}"></i>${AN[a]}</span>`).join('');
+const ag=document.getElementById('agents');
+for(const [m,t] of [['mrr','MRR de la respuesta final'],['recall','Fracción de archivos correctos hallados'],['hit5','Algún correcto entre los 5 primeros']]){const p=document.createElement('div');p.className='panel';p.innerHTML=`<h3 style="margin-top:0">${t}</h3><div class="bars"></div>`;
+ for(const a of AK)if(S.agents[a])p.querySelector('.bars').appendChild(bar(AN[a],S.agents[a][m],AC[a],1));ag.appendChild(p)}
+const ta=document.getElementById('t-agent');ta.innerHTML='<tr><th>método</th><th>n</th><th>USD por tarea</th><th>turnos</th><th>llamadas a herramientas</th><th>segundos</th><th>USD total</th></tr>';
+for(const a of AK){const v=S.agents[a];if(!v)continue;ta.innerHTML+=`<tr><td>${AN[a]}</td><td>${v.n}${v.errors?` (${v.errors} con error)`:''}</td><td>$${v.usd.mean.toFixed(4)}</td><td>${v.turns.mean.toFixed(1)}</td><td>${v.toolCalls.mean.toFixed(1)}</td><td>${v.sec.mean.toFixed(0)}</td><td>$${v.totalUsd.toFixed(3)}</td></tr>`}
+
+// 5 reutilización
+const REU=S.reuse,RA=S.reuseAgents;
+if(REU){
+ const MA=[['trad','rg + fd','var(--s1)'],['graph_bm25','grafo (BM25)','var(--s2)'],['explorer_deep','explorer --deep','var(--s4)'],['reuse_graph','reuse (grafo)','var(--s3)'],['reuse_deep','reuse --deep','var(--s3)']];
+ document.getElementById('legA').innerHTML=MA.map(([k,l,c])=>'<span><i style="background:'+c+'"></i>'+l+'</span>').join('');
+ const ba=document.getElementById('reuseA');for(const [k,l,c] of MA){const r=REU.A[k];if(r)ba.appendChild(bar(l,r.recall,c,0.6))}
+ const ta2=document.getElementById('t-reuseA');ta2.innerHTML='<tr><th>método</th><th>recall@8</th><th>algún acierto</th><th>ms</th></tr>'+MA.map(([k,l])=>{const r=REU.A[k];return r?'<tr><td>'+l+'</td><td>'+ci(r.recall)+'</td><td>'+ci(r.any)+'</td><td>'+r.ms+'</td></tr>':''}).join('');
+ const PL={'reuse_deep vs trad':'reuse --deep vs rg + fd','reuse_deep vs graph_bm25':'reuse --deep vs grafo','reuse_deep vs explorer_deep':'reuse --deep vs explorer --deep','reuse_graph vs graph_bm25':'reuse (grafo) vs grafo','reuse_deep vs reuse_graph':'reuse --deep vs reuse (grafo)'};
+ ta2.innerHTML+='<tr><th colspan="4" style="padding-top:12px">Diferencias por pares (recall@8)</th></tr>'+Object.entries(REU.pairsA).filter(([k])=>PL[k]).map(([k,v])=>{const sig=v.ci[0]>0?'ok':v.ci[1]<0?'no':'';return '<tr><td colspan="2">'+PL[k]+'</td><td colspan="2" class="'+sig+'">'+(v.mean>=0?'+':'')+v.mean.toFixed(2)+' ['+v.ci[0].toFixed(2)+', '+v.ci[1].toFixed(2)+']</td></tr>'}).join('');
+ const LB={rename:'Solo renombrado',noise:'Renombrado + líneas añadidas',prune:'Renombrado + añadidas + 25% de líneas borradas',foreign:'Control negativo (función de otro repo)'};
+ const pcn=s=>Math.round(s.mean*100)+'% <span class="small">('+Math.round(s.ci[0]*100)+'–'+Math.round(s.ci[1]*100)+')</span>';
+ document.getElementById('t-reuseB').innerHTML='<tr><th>disfraz</th><th>n</th><th>marcó el código nuevo</th><th>halló el original</th><th>lo etiquetó duplicado (≥0.6)</th><th>similitud mediana</th></tr>'+Object.entries(REU.B).map(([k,v])=>'<tr><td style="white-space:normal">'+LB[k]+'</td><td>'+v.n+'</td><td class="'+(k==='foreign'?(v.flagged.mean<0.1?'ok':'no'):'')+'">'+pcn(v.flagged)+'</td><td>'+pcn(v.foundOriginal)+'</td><td>'+pcn(v.duplicate)+'</td><td>'+(k==='foreign'?'—':v.medianJaccard.toFixed(2))+'</td></tr>').join('');
+}
+if(RA){
+ const OC=[['reutilizó','var(--good)'],['duplicó','var(--bad)'],['independiente','var(--ink3)'],['nada','var(--line)']];
+ const AL={plain:'Sin guía',guided:'Con reglas de reutilización'};
+ document.getElementById('reuseC').innerHTML=OC.slice(0,3).map(([o,c])=>'<span class="legend" style="display:inline-flex;margin-right:14px"><span><i style="background:'+c+'"></i>'+o+'</span></span>').join('')+Object.entries(RA.arms).map(([arm,v])=>'<div style="margin-top:12px"><div class="small">'+AL[arm]+' · n = '+v.n+'</div><div style="display:flex;height:22px;border-radius:3px;overflow:hidden;gap:2px;margin-top:4px">'+OC.map(([o,c])=>{const n=v.counts[o]||0;return n?'<div title="'+o+': '+n+'" style="flex:'+n+';background:'+c+';color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center">'+n+'</div>':''}).join('')+'</div></div>').join('');
+ const tc=document.getElementById('t-reuseC');tc.innerHTML='<tr><th></th><th>sin guía</th><th>con reglas</th></tr>';
+ const A1=RA.arms.plain,A2=RA.arms.guided;
+ if(A1&&A2){const row=(l,a,b)=>'<tr><td>'+l+'</td><td>'+a+'</td><td>'+b+'</td></tr>';
+  tc.innerHTML+=row('Reutilizó',pcn(A1.reused),pcn(A2.reused))+row('Escribió un duplicado',pcn(A1.duplicated),pcn(A2.duplicated))+row('USD por tarea','$'+A1.usd.toFixed(4),'$'+A2.usd.toFixed(4))+row('Turnos',A1.turns.toFixed(1),A2.turns.toFixed(1))+row('Segundos',A1.sec.toFixed(0),A2.sec.toFixed(0))+row('Usó explore --reuse / reuse-check',A1.usedExplore+' / '+A1.usedCheck,A2.usedExplore+' / '+A2.usedCheck)
+   +'<tr><td>Cambio pareado en "reutilizó"</td><td colspan="2" class="ok">+'+Math.round(RA.paired.reusedDelta.mean*100)+' pts ['+Math.round(RA.paired.reusedDelta.ci[0]*100)+', '+Math.round(RA.paired.reusedDelta.ci[1]*100)+']</td></tr>'
+   +'<tr><td>Cambio pareado en "duplicó"</td><td colspan="2">'+Math.round(RA.paired.duplicatedDelta.mean*100)+' pts ['+Math.round(RA.paired.duplicatedDelta.ci[0]*100)+', '+Math.round(RA.paired.duplicatedDelta.ci[1]*100)+']</td></tr>'}
+}
+</script>

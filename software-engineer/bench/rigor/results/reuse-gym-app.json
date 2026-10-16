@@ -1,0 +1,1081 @@
+{
+ "project": "gym-app",
+ "rowsA": [
+  {
+   "id": "gym-app:reuse:0",
+   "method": "trad",
+   "ms": 499,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:0",
+   "method": "graph_bm25",
+   "ms": 54,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:0",
+   "method": "explorer_deep",
+   "ms": 14302,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:0",
+   "method": "reuse_graph",
+   "ms": 1479,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 6
+  },
+  {
+   "id": "gym-app:reuse:0",
+   "method": "reuse_deep",
+   "ms": 9669,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 5
+  },
+  {
+   "id": "gym-app:reuse:1",
+   "method": "trad",
+   "ms": 325,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:1",
+   "method": "graph_bm25",
+   "ms": 12,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:1",
+   "method": "explorer_deep",
+   "ms": 15930,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:1",
+   "method": "reuse_graph",
+   "ms": 1473,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 6
+  },
+  {
+   "id": "gym-app:reuse:1",
+   "method": "reuse_deep",
+   "ms": 20903,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 1
+  },
+  {
+   "id": "gym-app:reuse:2",
+   "method": "trad",
+   "ms": 417,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:2",
+   "method": "graph_bm25",
+   "ms": 43,
+   "recall": 0.3333333333333333,
+   "any": 1,
+   "mrr": 0.2,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:2",
+   "method": "explorer_deep",
+   "ms": 9349,
+   "recall": 0.3333333333333333,
+   "any": 1,
+   "mrr": 0.125,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:2",
+   "method": "reuse_graph",
+   "ms": 1530,
+   "recall": 0.3333333333333333,
+   "any": 1,
+   "mrr": 0.2,
+   "n": 5
+  },
+  {
+   "id": "gym-app:reuse:2",
+   "method": "reuse_deep",
+   "ms": 12781,
+   "recall": 0.3333333333333333,
+   "any": 1,
+   "mrr": 0.2,
+   "n": 6
+  },
+  {
+   "id": "gym-app:reuse:3",
+   "method": "trad",
+   "ms": 267,
+   "recall": 1,
+   "any": 1,
+   "mrr": 0.3333333333333333,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:3",
+   "method": "graph_bm25",
+   "ms": 41,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:3",
+   "method": "explorer_deep",
+   "ms": 9319,
+   "recall": 1,
+   "any": 1,
+   "mrr": 0.2,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:3",
+   "method": "reuse_graph",
+   "ms": 1506,
+   "recall": 1,
+   "any": 1,
+   "mrr": 1,
+   "n": 7
+  },
+  {
+   "id": "gym-app:reuse:3",
+   "method": "reuse_deep",
+   "ms": 10418,
+   "recall": 1,
+   "any": 1,
+   "mrr": 0.3333333333333333,
+   "n": 5
+  },
+  {
+   "id": "gym-app:reuse:4",
+   "method": "trad",
+   "ms": 270,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:4",
+   "method": "graph_bm25",
+   "ms": 46,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 0
+  },
+  {
+   "id": "gym-app:reuse:4",
+   "method": "explorer_deep",
+   "ms": 8542,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 7
+  },
+  {
+   "id": "gym-app:reuse:4",
+   "method": "reuse_graph",
+   "ms": 1310,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 0
+  },
+  {
+   "id": "gym-app:reuse:4",
+   "method": "reuse_deep",
+   "ms": 9695,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 3
+  },
+  {
+   "id": "gym-app:reuse:5",
+   "method": "trad",
+   "ms": 306,
+   "recall": 0.3333333333333333,
+   "any": 1,
+   "mrr": 1,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:5",
+   "method": "graph_bm25",
+   "ms": 48,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:5",
+   "method": "explorer_deep",
+   "ms": 10838,
+   "recall": 0.3333333333333333,
+   "any": 1,
+   "mrr": 0.25,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:5",
+   "method": "reuse_graph",
+   "ms": 1535,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:5",
+   "method": "reuse_deep",
+   "ms": 8855,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 0
+  },
+  {
+   "id": "gym-app:reuse:6",
+   "method": "trad",
+   "ms": 344,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:6",
+   "method": "graph_bm25",
+   "ms": 47,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:6",
+   "method": "explorer_deep",
+   "ms": 18298,
+   "recall": 0.3333333333333333,
+   "any": 1,
+   "mrr": 0.5,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:6",
+   "method": "reuse_graph",
+   "ms": 1435,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 5
+  },
+  {
+   "id": "gym-app:reuse:6",
+   "method": "reuse_deep",
+   "ms": 15567,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 6
+  },
+  {
+   "id": "gym-app:reuse:7",
+   "method": "trad",
+   "ms": 425,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:7",
+   "method": "graph_bm25",
+   "ms": 15,
+   "recall": 1,
+   "any": 1,
+   "mrr": 0.25,
+   "n": 7
+  },
+  {
+   "id": "gym-app:reuse:7",
+   "method": "explorer_deep",
+   "ms": 8978,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:7",
+   "method": "reuse_graph",
+   "ms": 1478,
+   "recall": 1,
+   "any": 1,
+   "mrr": 1,
+   "n": 3
+  },
+  {
+   "id": "gym-app:reuse:7",
+   "method": "reuse_deep",
+   "ms": 13940,
+   "recall": 1,
+   "any": 1,
+   "mrr": 0.25,
+   "n": 5
+  },
+  {
+   "id": "gym-app:reuse:8",
+   "method": "trad",
+   "ms": 194,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:8",
+   "method": "graph_bm25",
+   "ms": 42,
+   "recall": 0.5,
+   "any": 1,
+   "mrr": 0.14285714285714285,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:8",
+   "method": "explorer_deep",
+   "ms": 15078,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:8",
+   "method": "reuse_graph",
+   "ms": 1519,
+   "recall": 0.5,
+   "any": 1,
+   "mrr": 0.5,
+   "n": 5
+  },
+  {
+   "id": "gym-app:reuse:8",
+   "method": "reuse_deep",
+   "ms": 17071,
+   "recall": 0.5,
+   "any": 1,
+   "mrr": 0.16666666666666666,
+   "n": 6
+  },
+  {
+   "id": "gym-app:reuse:9",
+   "method": "trad",
+   "ms": 299,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:9",
+   "method": "graph_bm25",
+   "ms": 46,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:9",
+   "method": "explorer_deep",
+   "ms": 13822,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 7
+  },
+  {
+   "id": "gym-app:reuse:9",
+   "method": "reuse_graph",
+   "ms": 1479,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 7
+  },
+  {
+   "id": "gym-app:reuse:9",
+   "method": "reuse_deep",
+   "ms": 18280,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 6
+  },
+  {
+   "id": "gym-app:reuse:10",
+   "method": "trad",
+   "ms": 428,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:10",
+   "method": "graph_bm25",
+   "ms": 46,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 4
+  },
+  {
+   "id": "gym-app:reuse:10",
+   "method": "explorer_deep",
+   "ms": 12415,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:10",
+   "method": "reuse_graph",
+   "ms": 1506,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 1
+  },
+  {
+   "id": "gym-app:reuse:10",
+   "method": "reuse_deep",
+   "ms": 15249,
+   "recall": 1,
+   "any": 1,
+   "mrr": 1,
+   "n": 3
+  },
+  {
+   "id": "gym-app:reuse:11",
+   "method": "trad",
+   "ms": 331,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 8
+  },
+  {
+   "id": "gym-app:reuse:11",
+   "method": "graph_bm25",
+   "ms": 14,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 0
+  },
+  {
+   "id": "gym-app:reuse:11",
+   "method": "explorer_deep",
+   "ms": 8101,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 6
+  },
+  {
+   "id": "gym-app:reuse:11",
+   "method": "reuse_graph",
+   "ms": 1462,
+   "recall": 0,
+   "any": 0,
+   "mrr": 0,
+   "n": 0
+  },
+  {
+   "id": "gym-app:reuse:11",
+   "method": "reuse_deep",
+   "ms": 16337,
+   "recall": 1,
+   "any": 1,
+   "mrr": 0.3333333333333333,
+   "n": 4
+  }
+ ],
+ "rowsB": [
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "getOwnRoutine",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "getOwnRoutine",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.87,
+   "topJaccard": 0.87,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "getOwnRoutine",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.83,
+   "topJaccard": 0.83,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "Avatar",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "Avatar",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.82,
+   "topJaccard": 0.82,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "Avatar",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.69,
+   "topJaccard": 0.69,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "FormSkeleton",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "FormSkeleton",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.87,
+   "topJaccard": 0.87,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "FormSkeleton",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.82,
+   "topJaccard": 0.82,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "Badge",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "Badge",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.74,
+   "topJaccard": 0.74,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "Badge",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 0,
+   "jaccard": 0.57,
+   "topJaccard": 0.57,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "deriveMembershipStatus",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "deriveMembershipStatus",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.63,
+   "topJaccard": 0.63,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "deriveMembershipStatus",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.63,
+   "topJaccard": 0.63,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "deviceInstantToUtc",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "deviceInstantToUtc",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.9,
+   "topJaccard": 0.9,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "deviceInstantToUtc",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.78,
+   "topJaccard": 0.78,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "getSalesBreakdown",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "getSalesBreakdown",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.78,
+   "topJaccard": 0.78,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "getSalesBreakdown",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 0,
+   "jaccard": 0.57,
+   "topJaccard": 0.57,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "accessNote",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "accessNote",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.76,
+   "topJaccard": 0.76,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "accessNote",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.67,
+   "topJaccard": 0.67,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "mondayOfIsoWeek",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "mondayOfIsoWeek",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.91,
+   "topJaccard": 0.91,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "mondayOfIsoWeek",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.68,
+   "topJaccard": 0.68,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "parseBillingPageParams",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "parseBillingPageParams",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.93,
+   "topJaccard": 0.93,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "parseBillingPageParams",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.7,
+   "topJaccard": 0.7,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "stepAnchor",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "stepAnchor",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.83,
+   "topJaccard": 0.83,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "stepAnchor",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.79,
+   "topJaccard": 0.79,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "rename",
+   "orig": "translateAccessCodeCollision",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 1,
+   "topJaccard": 1,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "noise",
+   "orig": "translateAccessCodeCollision",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 0,
+   "jaccard": 0.54,
+   "topJaccard": 0.54,
+   "scanned": 1
+  },
+  {
+   "kind": "positive",
+   "level": "prune",
+   "orig": "translateAccessCodeCollision",
+   "flagged": 1,
+   "foundOriginal": 1,
+   "duplicate": 1,
+   "jaccard": 0.61,
+   "topJaccard": 0.61,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "shouldPauseAfterPoll",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "checkIdentityMapReadiness",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "nextEnrollmentPoll",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "resolveDataPath",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "checkListenerHost",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "describePollFallback",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "BodyMap",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "toDomainUser",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "pullChanges",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "buildCoachSystemPrompt",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "updateProfile",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  },
+  {
+   "kind": "negative",
+   "level": "foreign",
+   "orig": "setCoachEntitlement",
+   "flagged": 0,
+   "foundOriginal": 0,
+   "duplicate": 0,
+   "jaccard": 0,
+   "topJaccard": 0,
+   "scanned": 1
+  }
+ ],
+ "index": {
+  "project": "harness-8cf48681",
+  "nodes": 13078,
+  "edges": 32106,
+  "ms": 1507
+ }
+}
