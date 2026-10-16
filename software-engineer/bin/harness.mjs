@@ -1,23 +1,26 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { basename, join, resolve } from 'node:path';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join, resolve } from 'node:path';
 import { cwd } from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { CATEGORIES } from '../src/defaults.mjs';
 import { classify } from '../src/classify.mjs';
-import { changedFiles, checkScope, runGate, snapshotDirty } from '../src/gate.mjs';
-import { finalAgentMessage, sessionStartedSince } from '../src/codex.mjs';
-import { judgeRun, pencilAppRunning } from '../src/verdict.mjs';
+import { changedFiles, checkScope, headSha, newCommits, runGate, snapshotDirty } from '../src/gate.mjs';
+import { judgeRun } from '../src/verdict.mjs';
+import { fleetSnapshot } from '../src/fleet.mjs';
+import { renderFrame, runTui } from '../src/tui.mjs';
+import { formatPiEvent, parsePiJsonl, piArgs, piHasModels, resolvePi, runPi } from '../src/pi.mjs';
 import * as herdr from '../src/herdr.mjs';
 import { assignSkills, buildAgentsMd, detect, installAgents, installRoleSkills, proposeProfile, recommend, recommendationsMd, writeAgentsMd, writeRolePrompt } from '../src/init.mjs';
-import { collect, collectCodex, collectRollup, ensureSchema, transcriptDir, writeGate, writeRun } from '../src/metrics.mjs';
+import { collect, collectCodex, collectRollup, piRunsAsSessions, ensureSchema, transcriptDir, writeGate, writeRun } from '../src/metrics.mjs';
 import { taskWindows } from '../src/attribution.mjs';
 import { report } from '../src/report.mjs';
+import { compareExecutors, compareMd } from '../src/rollup.mjs';
 import { detectLegacy, diffText, reportMd, sdd } from '../src/migrate.mjs';
 import { backlogInfo, bridgePidFile, clearBridgePid, ensureBridge, tick } from '../src/pixel.mjs';
 import { route } from '../src/router.mjs';
 import { dirs, getProfileValue, loadBacklog, loadProfile, setProfileValue, writeJson } from '../src/store.mjs';
-import { addTask, applyEvent, nextStep } from '../src/tasks.mjs';
+import { addTask, applyEvent, nextStep, setTaskPaths } from '../src/tasks.mjs';
 import { readRows } from '../src/toonfile.mjs';
 import { exploreReuse, reuseCheck } from '../src/reuse.mjs';
 import { reindex } from '../src/graph.mjs';
@@ -155,9 +158,14 @@ try {
         const baseline = snapshotDirty(root, t0.base);
         out({ ...applyEvent(root, profile, rest[0], 'approve', { by: flag.by, baseline }), baselineFiles: Object.keys(baseline).length });
       }
+      else if (sub === 'paths') {
+        if (!rest[0] || (!flag.add && !flag.remove)) fail('uso: task paths <id> [--add a,b] [--remove c]');
+        out(setTaskPaths(root, profile, rest[0], { add: list(flag.add), remove: list(flag.remove) }));
+      }
+      else if (sub === 'redesign') out(applyEvent(root, profile, rest[0], 'redesign'));
       else if (sub === 'event') out(applyEvent(root, profile, rest[0], rest[1], { provider: flag.provider }));
       else if (sub === 'list') out(Object.values(loadBacklog(root).tasks).map((t) => ({ id: t.id, category: t.category, tier: t.tier, status: t.status, attempts: t.attempts })));
-      else fail('uso: task add|approve|event|list');
+      else fail('uso: task add|approve|paths|redesign|event|list');
       break;
     }
     case 'next': {
@@ -211,87 +219,95 @@ try {
       break;
     }
     case 'exec': {
-      // Lanza a un agente en Codex por Herdr: executor o designer (Pencil). La exploración ya no pasa por aquí: `harness explore`. El prompt lleva referencias, no contenido (7.13).
+      // Lanza al executor en pi (headless, JSONL). El designer y el reviewer son subagentes de Claude; la exploración es `harness explore`. El prompt lleva referencias, no contenido (7.13).
       const role = flag.role || 'executor';
-      if (role === 'explore') fail('explore ya no se lanza por Herdr: cualquier agente lo llama como comando local, `harness explore "<pregunta>"`');
-      if (!['executor', 'designer'].includes(role)) fail(`--role debe ser executor o designer (recibí ${role})`);
+      if (role === 'explore') fail('explore ya no se lanza por exec: cualquier agente lo llama como comando local, `harness explore "<pregunta>"`');
+      if (role !== 'executor') fail(`exec solo lanza al executor en pi (recibí ${role}); el designer y el reviewer son subagentes de Claude`);
       const profile = loadProfile(root);
       const t = need(sub);
-      let rt; let refs;
       const step = nextStep(profile, t, { available: list(flag.available) });
-      if (step.action !== 'run' || step.role !== role || (role === 'designer' && step.phase !== 'spec')) fail(`el siguiente paso no es ${role}: ${JSON.stringify(step)}`);
-      rt = step.route; refs = step.refs;
-      if (rt.provider !== 'codex') {
-        fail(role === 'designer' ? `el designer está configurado en ${rt.provider}, no en Codex (cámbialo con: harness config set models.designer.use codex)` : `este comando solo lanza Codex; la ruta eligió ${rt.provider}`);
-      }
-      if (role === 'designer' && !pencilAppRunning()) fail('Pencil no está abierto: su MCP se conecta a la app de escritorio. Ábrela (open -a Pencil) y vuelve a lanzar; no gasté ninguna ejecución de Codex.');
-      const replyRel = `.harness/replies/${t.id}${role === 'executor' ? '' : `.${role}`}.txt`;
+      if (step.action !== 'run' || step.role !== role) fail(`el siguiente paso no es ${role}: ${JSON.stringify(step)}`);
+      const rt = step.route; const refs = step.refs;
+      if (rt.provider !== 'pi') fail(`este comando solo lanza pi; la ruta eligió ${rt.provider}`);
+      const bin = resolvePi(profile);
+      if (!bin) fail('no encuentro pi. Instálalo (npm i -g --ignore-scripts @earendil-works/pi-coding-agent, Node ≥ 22.19) o fija pi.bin / PI_BIN; no gasté ningún intento.');
+      if (!piHasModels(bin)) fail('pi no tiene modelos: ejecuta `pi`, haz /login con tu suscripción o API key y vuelve a lanzar; no gasté ningún intento.');
+      const replyRel = `.harness/replies/${t.id}.txt`;
       mkdirSync(join(root, '.harness', 'replies'), { recursive: true });
       rmSync(join(root, replyRel), { force: true }); // una respuesta vieja no cuenta como evidencia de esta corrida
-      writeRolePrompt(root, role, profile);
-      const contract = ['Reply with ONE line: DONE <summary> or FAILED <reason>.', `Also write that same line to ${replyRel} (the terminal output cannot be read back).`];
-      const head = [`You are the ${role} for task ${t.id} (${t.category}, tier ${t.tier}): ${t.title}`, `First read .harness/prompts/${role}.md and follow it exactly.`];
-      const t2note = t.tier === 'T2' ? (herdr.codexSandbox(profile, t.tier).sandbox === 'danger-full-access'
-        ? 'TIER T2 (sandbox OFF: you have network and full disk access, so be careful): database commands only against the LOCAL test database, never against any other DATABASE_URL. Never run prisma migrate reset, db push, or anything with --force. Do not read or modify prisma/*.sql snapshot or backup files, or any .env file. Make migrations reversible or explain why not in your reply.'
-        : 'TIER T2: your sandbox has NO network (not even localhost), so do not run database commands. Write schema/migration/code files only. Never run prisma migrate reset, db push, migrate dev/deploy or anything with --force; the gate applies and verifies the migration. Make migrations reversible or explain why not in your reply.') : '';
-      const body = {
-        executor: [
-          `Branch: ${t.branch}. Allowed paths: ${t.paths.join(', ') || '(any)'}. Do not touch anything else.`,
-          `Plan and context: Engram keys ${refs.plan} and ${refs.design} (read them directly; skip if missing).`,
-          flag.instruction ? `Instruction: ${flag.instruction}` : '', t2note,
-          'Do not push, merge or mark the task done.', ...contract,
-        ],
-        designer: [
-          `Plan and context: Engram key ${refs.plan} (read it directly). Save your TEXT design spec in Engram key ${refs.design} (the executor reads it; it cannot open the canvas).`,
-          `Design with the Pencil MCP and save the file as design/${t.id}.pen. Write only design/** files: do not touch code.`,
-          flag.instruction ? `Instruction: ${flag.instruction}` : '', ...contract,
-        ],
-      }[role];
-      const text = [...head, ...body].filter(Boolean).join('\n');
-      const name = `${role === 'executor' ? 'exec' : role}-${t.id}`.slice(0, 31).toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+      const promptFile = writeRolePrompt(root, role, profile);
+      const t2note = t.tier === 'T2' ? 'TIER T2: database commands only against the LOCAL test database, never against any other DATABASE_URL. Never run prisma migrate reset, db push, or anything with --force. Do not read or modify prisma/*.sql snapshot or backup files, or any .env file. Make migrations reversible or explain why not in your reply.' : '';
+      const text = [
+        `You are the ${role} for task ${t.id} (${t.category}, tier ${t.tier}): ${t.title}`,
+        `Branch: ${t.branch}. Allowed paths: ${t.paths.join(', ') || '(any)'}. Do not touch anything else.`,
+        `Plan and context: Engram keys ${refs.plan} and ${refs.design} (read them with the engram MCP; skip if missing).`,
+        flag.instruction ? `Instruction: ${flag.instruction}` : '', t2note,
+        'Do not push, merge or mark the task done.', 'Reply with ONE line: DONE <summary> or FAILED <reason>.',
+      ].filter(Boolean).join('\n');
       const t0 = Date.now();
-      const pixel = ensureBridge(root, fileURLToPath(import.meta.url));
-      const pane = herdr.splitPane(root);
-      try {
-        herdr.startAgent(name, 'codex', pane, herdr.codexArgs(profile, rt, t.tier, {}));
-        const { hooksDismissed } = herdr.waitCodexReady(name);
-        if (role === 'executor') applyEvent(root, profile, t.id, 'exec_started', { provider: 'codex' });
-        herdr.prompt(name, text, Number(flag.timeout || 300000));
-        // Id de la sesión de Codex (su archivo en ~/.codex): une esta corrida con sus tokens, su cuota y su respuesta final.
-        // Codex crea la sesión al recibir la tarea, así que se lee después de enviarla; si Herdr no lo da, se busca por carpeta y hora.
-        let codexSession = '';
-        try { codexSession = herdr.agentGet(name).result?.agent?.agent_session?.value || ''; } catch { /* sin id */ }
-        if (!codexSession) codexSession = sessionStartedSince(root, t0);
-        const replyFile = join(root, replyRel);
-        const fileReply = existsSync(replyFile) ? readFileSync(replyFile, 'utf8').trim() : '';
-        // Su respuesta final queda en la sesión de Codex aunque no pueda escribir archivos (explore va de solo lectura).
-        const finalMsg = codexSession ? finalAgentMessage(codexSession) : '';
-        const answer = fileReply || finalMsg;
-        const reply = answer ? answer.slice(0, 600) : '(sin respuesta)';
-        const state = herdr.agentGet(name).result?.agent?.agent_status ?? 'unknown';
-        const changed = role === 'executor' ? checkScope(root, t).files?.length > 0
-          : role === 'designer' ? (changedFiles(root, t.base) || []).some((f) => f.startsWith('design/')) : false;
-        const verdict = judgeRun({ role, reply: answer, changed });
-        const evidence = verdict.ok;
-        const blocked = state === 'blocked';
-        const event = { executor: evidence ? 'exec_done' : 'exec_failed', designer: evidence ? 'design_done' : 'design_failed' }[role];
-        if (!blocked && event) applyEvent(root, profile, t.id, event);
-        if (!blocked && !evidence) process.exitCode = 2;
-        writeRun(dirs(root).metrics, { task: t.id, role, provider: 'codex', model: rt.model, effort: rt.effort || '', ts: new Date(t0).toISOString(), ms: Date.now() - t0, state, attempt: t.attempts, codex_session: codexSession, evidence: evidence ? 'yes' : 'no', hooks_dismissed: hooksDismissed ? 'yes' : 'no' });
-        out({ ok: !blocked && evidence, role, ...(!blocked && !evidence ? { error: `Codex (${role}): ${verdict.reason}. Intento fallido (harness next dice cómo seguir)` } : {}), pane, agent: name, route: rt, state, hooksDismissed, pixel, reply });
-      } finally {
-        if (!flag.keep) { try { herdr.closePane(pane); } catch { /* el pane ya no existe */ } }
+      const headBefore = headSha(root);
+      applyEvent(root, profile, t.id, 'exec_started', { provider: 'pi' });
+      // Log en vivo: `tail -f` o `harness watch <id>` desde otra terminal; `--live` lo imprime aquí mismo (stderr, el stdout sigue siendo el JSON final).
+      const logFile = join(root, '.harness', 'logs', `${t.id}.jsonl`);
+      mkdirSync(dirname(logFile), { recursive: true });
+      writeFileSync(logFile, '');
+      // Verlo trabajar es lo normal: dentro de Herdr se abre un pane que lo sigue; fuera, se imprime por stderr. `--quiet` lo apaga.
+      const paneFile = join(dirname(logFile), `${t.id}.pane`);
+      let watchPane = null;
+      if (!flag.quiet && herdr.inHerdr()) {
+        try {
+          if (existsSync(paneFile)) { try { herdr.closePane(readFileSync(paneFile, 'utf8').trim()); } catch { /* ya no existe */ } }
+          watchPane = herdr.openWatchPane(root, t.id, fileURLToPath(import.meta.url));
+          writeFileSync(paneFile, watchPane);
+        } catch (e) { console.error(`[exec] no pude abrir el pane de seguimiento (${String(e.message).split('\n')[0]}): sigo sin él`); }
       }
+      const live = !flag.quiet && !watchPane;
+      const onLine = (l) => {
+        appendFileSync(logFile, `${l}\n`);
+        if (live) { try { const f = formatPiEvent(JSON.parse(l)); if (f) console.error(f); } catch { /* línea cortada */ } }
+      };
+      const run = await runPi({ bin, cwd: root, onLine, args: piArgs(rt, { promptFile, prompt: text }), timeoutMs: Number(flag.timeout || profile.pi?.timeoutMs?.[role] || 600000) });
+      const res = parsePiJsonl(run.stdout);
+      const failure = run.timedOut ? `pi superó el tiempo máximo (${Math.round((Date.now() - t0) / 1000)} s)` : res.error || (!res.text && run.code !== 0 ? `pi terminó con código ${run.code}: ${run.stderr.trim().slice(-300)}` : '');
+      const answer = failure ? '' : res.text;
+      const commits = newCommits(root, headBefore);
+      const verdict = failure ? { ok: false, reason: failure } : judgeRun({ role, reply: answer, commits, screen: run.stderr });
+      writeFileSync(join(root, replyRel), `${answer || (failure ? `FAILED ${failure}` : '')}\n`);
+      applyEvent(root, profile, t.id, verdict.ok ? 'exec_done' : 'exec_failed');
+      if (!verdict.ok) process.exitCode = 2;
+      writeRun(dirs(root).metrics, { task: t.id, role, provider: 'pi', model: res.model || rt.model || '', effort: rt.effort || '', ts: new Date(t0).toISOString(), ms: Date.now() - t0, state: verdict.ok ? 'done' : 'failed', attempt: t.attempts, session: res.session, turns: res.turns, in: res.in, cached: res.cached, out: res.out, cost: res.cost, evidence: verdict.ok ? 'yes' : 'no' });
+      out({ ok: verdict.ok, role, ...(watchPane ? { watchPane } : {}), ...(!verdict.ok ? { error: `pi (${role}): ${verdict.reason}. Intento fallido (harness next dice cómo seguir)` } : {}), route: rt, model: res.model, tokens: { in: res.in, cached: res.cached, out: res.out }, cost: res.cost, reply: (answer || verdict.reason || '(sin respuesta)').slice(0, 600) });
+      break;
+    }
+    case 'tui': {
+      // Panel de todos los proyectos con harness. `--once [--view proyectos|vivo|metricas]` imprime un cuadro y sale (útil para scripts).
+      if (!flag.once) { if (!process.stdout.isTTY) fail('la TUI necesita una terminal; usa --once para imprimir un cuadro'); runTui(); break; }
+      const tab = { proyectos: 0, vivo: 1, metricas: 2 }[flag.view || 'proyectos'] ?? 0;
+      console.log(renderFrame(fleetSnapshot(), { tab, sel: Number(flag.sel || 0), detail: !!flag.detail, scope: flag.scope || 'general' }, { width: Number(flag.width || 110), height: 40, color: !!process.stdout.isTTY }));
+      break;
+    }
+    case 'watch': {
+      // Sigue el log de la última corrida de una tarea y lo muestra legible. Ctrl+C para salir; termina solo cuando pi acaba.
+      need(sub); // valida que la tarea exista
+      const file = join(root, '.harness', 'logs', `${sub}.jsonl`);
+      if (!existsSync(file)) fail(`no hay log de ${sub} todavía (${file}): lanza antes \`harness exec ${sub}\``);
+      let pos = 0; let buf = ''; let done = false;
+      const pump = () => {
+        const data = readFileSync(file); if (data.length < pos) pos = 0; // el log se reinició: otra corrida
+        buf += data.subarray(pos).toString('utf8'); pos = data.length;
+        const lines = buf.split('\n'); buf = lines.pop();
+        for (const l of lines) { try { const ev = JSON.parse(l); const f = formatPiEvent(ev); if (f) console.log(f); if (ev.type === 'agent_settled') done = true; } catch { /* cortada */ } }
+      };
+      while (!done) { pump(); if (!done) await new Promise((r) => setTimeout(r, 400)); }
       break;
     }
     case 'config': {
-      // Cambia o lee una clave del perfil: harness config get models.designer | set models.designer.use claude
+      // Cambia o lee una clave del perfil: harness config get models.executor | set models.executor.model <proveedor/id>
       const profile = loadProfile(root);
       if (sub === 'get') { out(getProfileValue(profile, rest[0] || '') ?? null); break; }
       if (sub !== 'set' || !rest[0] || rest[1] === undefined) fail('uso: config get <clave> | config set <clave> <valor>');
       let value = rest[1];
       try { value = JSON.parse(rest[1]); } catch { /* texto plano */ }
-      if (rest[0] === 'models.designer.use' && !['codex', 'claude'].includes(value)) fail('models.designer.use debe ser codex o claude');
       setProfileValue(root, rest[0], value);
       out({ set: rest[0], value, note: rest[0].startsWith('models.') ? 'el cambio aplica en el siguiente `harness next`' : undefined });
       break;
@@ -308,11 +324,13 @@ try {
         const n = (x) => (x?.total ?? x?.files ?? x);
         out({ schemaReset: reset, claude: claude.error ? claude : { transcripts: claude.files, turns: n(claude.turns), sessions: n(claude.sessions) }, codex: { rollouts: codex.files, sessions: n(codex.sessions), quota: n(codex.quota) }, tasks: rollup.tasks.total, tables: Object.keys(rollup).concat(['turns', 'sessions', 'tools', 'codex_sessions', 'codex_tools', 'quota']) });
       } else if (sub === 'report') {
-        const tables = Object.fromEntries(['tasks', 'task_roles', 'turns', 'codex_sessions', 'quota'].map((n) => [n === 'codex_sessions' ? 'codex' : n === 'task_roles' ? 'task_roles' : n, readRows(md, n)]));
+        const tables = Object.fromEntries(['tasks', 'task_roles', 'turns', 'codex_sessions', 'quota'].map((n) => [n === 'codex_sessions' ? 'codex' : n, n === 'codex_sessions' ? [...readRows(md, n), ...piRunsAsSessions(readRows(md, 'runs'))] : readRows(md, n)]));
         process.stdout.write(report(tables, { only: rest[0] || null }));
+      } else if (sub === 'compare') {
+        process.stdout.write(compareMd(compareExecutors(readRows(md, 'tasks'))));
       } else if (sub === 'show') {
         out(readRows(md, rest[0] || 'sessions').slice(-Number(flag.n || 10)));
-      } else fail('uso: metrics collect | report [tarea] | show [tabla] [--n N]');
+      } else fail('uso: metrics collect | report [tarea] | compare | show [tabla] [--n N]');
       break;
     }
     case 'doctor': {
@@ -321,29 +339,31 @@ try {
       const profile = loadProfile(root);
       out({
         herdr: { bin: has('herdr'), inside: herdr.inHerdr() },
-        codex: has('codex'), claude: has('claude'),
+        pi: resolvePi(profile) || false, claude: has('claude'),
         profile: existsSync(dirs(root).profile),
         gate: profile.gate.cmd || null,
-        note: 'la comprobación de Engram en Codex (clave canaria) no está implementada: ver 8.3 de las notas',
+        note: 'pi: la suscripción se conecta con /login dentro de pi; `pi mcp list` muestra los MCP (engram, codebase-memory)',
       });
       break;
     }
     default:
       console.log(`harness <comando>
-  pixel bridge [--once] [--all]              muestra en Pixel Agents a los agentes de Codex (Herdr → hooks)
+  pixel bridge [--once] [--all]              (legado) muestra en Pixel Agents a los agentes de Codex
   agents sync [--reassign] [--force] regenera el bloque de proyecto de cada agente y las recomendaciones
   init [--apply] [--force]            detecta el proyecto y propone .harness/profile.json
   categories | classify <cat> --paths a,b
-  task add <id> --title T --category C [--paths a,b] | approve <id> | event <id> <evento> | list
-  next <id> [--available claude,codex]   siguiente paso (lo consulta el planner)
-  route <rol> --tier T1 --attempt 0 --executor codex|claude
+  task add <id> --title T --category C [--paths a,b] | approve <id> | paths <id> --add a,b --remove c | redesign <id> | event <id> <evento> | list
+  next <id> [--available claude,pi]   siguiente paso (lo consulta el planner)
+  route <rol> --tier T1 --attempt 0 --executor pi|claude
   gate <id>                           corre el gate y mueve el estado
   explore "<qué vas a escribir>" [--deep] [--fresh] [--json]   ¿ya existe algo reutilizable? (grafo; --deep: Haiku decide)
   explore --reindex                           indexa el grafo en modo full (hace falta una vez por repo)
   reuse-check [id] [--base ref] [--strict]    ¿lo escrito en el diff duplica código existente? (--strict: código 1 si hay duplicado)
-  exec <id> [--role executor|designer] [--instruction T] [--keep]   lanza ese agente en Codex por Herdr
-  config get <clave> | set <clave> <valor>   p. ej. models.designer.use claude
-  metrics collect | report [tarea] | show [tabla]   métricas completas en TOON y un informe legible, sin gastar tokens
+  exec <id> [--instruction T] [--timeout ms] [--quiet]   lanza al executor en pi (headless); lo muestra en vivo (pane de Herdr o stderr)
+  tui [--once]                               panel de todos los proyectos: configuración, desactualizados, agentes en vivo y métricas
+  watch <id>                                 sigue en vivo la última corrida de esa tarea (desde otra terminal)
+  config get <clave> | set <clave> <valor>   p. ej. models.executor.model <proveedor/id>
+  metrics collect | report [tarea] | compare | show [tabla] métricas completas en TOON y un informe legible, sin gastar tokens
   doctor
   --root DIR (por defecto: directorio actual)`);
   }

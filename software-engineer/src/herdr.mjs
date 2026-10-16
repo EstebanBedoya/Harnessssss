@@ -55,6 +55,13 @@ export function waitCodexReady(name, { tries = 30, delayMs = 500, read = agentRe
   throw new Error(`Codex no llegó a su prompt de entrada; no escribí la tarea. Pantalla:\n${last.trim().slice(-600)}`);
 }
 
+// Un exec interrumpido deja el nombre tomado (`agent_name_taken`): se libera renombrando al agente viejo antes de lanzar otro.
+export function freeAgentName(name, { get = (n) => herdr(['agent', 'get', n]), rename = (n, to) => herdr(['agent', 'rename', n, to], { json: false }), stamp = Date.now } = {}) {
+  try { get(name); } catch (e) { return false; } // agent_not_found: el nombre está libre
+  rename(name, `${name.slice(0, 20)}-o-${stamp().toString(36).slice(-6)}`);
+  return true;
+}
+
 export const agentGet = (name) => herdr(['agent', 'get', name]);
 export const agentRead = (name, lines = 80, source = 'recent-unwrapped') =>
   herdr(['agent', 'read', name, '--source', source, '--lines', String(lines)], { json: false });
@@ -72,4 +79,21 @@ export function codexArgs(profile, route, tier, { sandbox: forced } = {}) {
   const a = ['-s', sandbox, '-a', approval, '-m', route.model];
   if (route.effort) a.push('-c', `model_reasoning_effort="${route.effort}"`);
   return a;
+}
+
+const agentReadPane = (pane) => herdr(['pane', 'read', pane, '--source', 'visible', '--lines', '5'], { json: false });
+
+// Pane lateral que sigue en vivo la corrida del executor (`harness watch`). Devuelve el id del pane.
+const shq = (s) => `'${String(s).replace(/'/g, `'\\''`)}'`;
+export function openWatchPane(cwd, taskId, script, node = process.execPath) {
+  const pane = splitPane(cwd);
+  // Un shell recién creado descarta lo que se le escribe antes de mostrar su prompt: se espera a que muestre algo.
+  for (let i = 0; i < 30; i++) {
+    let seen = ''; try { seen = agentReadPane(pane); } catch { /* aún no responde */ }
+    if (seen.trim()) break;
+    sleep(300);
+  }
+  sleep(300);
+  herdr(['pane', 'run', pane, `${shq(node)} ${shq(script)} watch ${shq(taskId)}`], { json: false });
+  return pane;
 }

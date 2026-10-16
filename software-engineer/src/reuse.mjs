@@ -183,7 +183,7 @@ function changedRanges(root, base) {
     const h = ln.match(/^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/);
     if (h && cur) { const n = h[2] === undefined ? 1 : Number(h[2]); if (n > 0) files.get(cur).push([Number(h[1]), Number(h[1]) + n - 1]); }
   }
-  for (const f of (spawnSync('git', ['ls-files', '-o', '--exclude-standard'], { cwd: root, encoding: 'utf8' }).stdout || '').split('\n').filter(Boolean)) files.set(f, [[1, 1e9]]);
+  for (const f of (spawnSync('git', ['ls-files', '-o', '--exclude-standard'], { cwd: root, encoding: 'utf8' }).stdout || '').split('\n').filter(Boolean)) if (!/^(\.harness|design)\//.test(f)) files.set(f, [[1, 1e9]]); // artefactos del harness (shots.mjs, reportes) nunca se commitean: no son código del proyecto
   return files;
 }
 

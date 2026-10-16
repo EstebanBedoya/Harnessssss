@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { matches } from './glob.mjs';
 
-// El designer (Pencil) guarda sus archivos en design/: no son parte del scope del código pero tampoco una violación.
+// El designer guarda sus archivos en design/: no son parte del scope del código pero tampoco una violación.
 export const DESIGN_PATHS = ['design/**'];
 
 const git = (root, args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
@@ -16,6 +16,14 @@ export function changedFiles(root, base) {
   const tracked = git(root, ['diff', '--name-only', ref]).stdout.split('\n');
   const untracked = git(root, ['ls-files', '-o', '--exclude-standard']).stdout.split('\n');
   return [...new Set([...tracked, ...untracked].filter(Boolean))].filter((p) => !p.startsWith('.harness/'));
+}
+
+export const headSha = (root) => { const r = git(root, ['rev-parse', 'HEAD']); return r.status === 0 ? r.stdout.trim() : ''; };
+// Commits nuevos sobre un HEAD anterior: la evidencia real de que un executor trabajó (0 si no hay git o no hay punto de partida).
+export function newCommits(root, since) {
+  if (!since) return 0;
+  const r = git(root, ['rev-list', '--count', `${since}..HEAD`]);
+  return r.status === 0 ? Number(r.stdout.trim()) || 0 : 0;
 }
 
 const hashOf = (root, f) => {
@@ -59,7 +67,8 @@ export function runGate(root, profile, task) {
   }
   if (!profile.gate.cmd) return { pass: false, reason: 'sin gate configurado', ms: 0, tail: '', scope };
   const t0 = Date.now();
-  const cmd = task.tier === 'T2' && profile.gate.t2Cmd ? `${profile.gate.cmd} && ${profile.gate.t2Cmd}` : profile.gate.cmd; // T2: pasos extra, por ejemplo aplicar la migración a la base de pruebas
+  // typecheckCmd: `next build` no revisa los specs; un `tsc --noEmit` opcional del perfil sí. T2: pasos extra, por ejemplo aplicar la migración a la base de pruebas.
+  const cmd = [profile.gate.cmd, profile.gate.typecheckCmd, task.tier === 'T2' && profile.gate.t2Cmd].filter(Boolean).join(' && ');
   const r = spawnSync(cmd, { cwd: root, shell: true, encoding: 'utf8', timeout: profile.gate.timeoutMs });
   const out = `${r.stdout || ''}${r.stderr || ''}`.trim().split('\n').slice(-15).join('\n');
   return { pass: r.status === 0, reason: r.status === 0 ? 'ok' : `exit ${r.status}`, ms: Date.now() - t0, tail: out, scope };

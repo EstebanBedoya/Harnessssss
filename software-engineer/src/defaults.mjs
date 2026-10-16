@@ -22,28 +22,29 @@ export const CATEGORIES = {
 // Tabla de 6.7: modelo y esfuerzo por rol. effort: null = el modelo no admite esfuerzo (Haiku 4.5).
 export const DEFAULT_PROFILE = {
   version: 1,
+  // typecheckCmd (opcional): p. ej. 'pnpm tsc --noEmit', porque `next build` no revisa los .spec.ts
   gate: { cmd: null, timeoutMs: 600000 },
   git: { integration: 'develop', deploy: 'main' },
   tiers: { t2: [], t1: [], ui: [] },
   retries: 1,
   // byTier: { T2: { sandbox: 'danger-full-access' } } para fijar el sandbox o la aprobación por tier
+  // pi (pi.dev) es el proveedor externo: sin sandbox ni aprobaciones. `bin` fija el ejecutable; timeoutMs es la espera por rol.
+  pi: { bin: null, timeoutMs: { executor: 600000 } },
+  // Legado: solo lo leen el puente de Pixel y las métricas históricas de Codex.
   codex: { sandbox: 'workspace-write', approval: 'never', byTier: {} },
-  // Reparto (2026-10-04): Claude solo para el planner y el QA (reviewer, Sonnet 5.5); todo lo demás corre en Codex.
-  // El executor NO cae a Claude si Codex falla: el planner se detiene y avisa (un fallback manual se registra con el evento `fallback`).
+  // Reparto: Claude solo para el planner, el QA (reviewer, Sonnet 5.5) y el designer (Claude Design); lo demás corre en pi.
+  // model: null deja que pi use el modelo de su config (`/login`, `pi --list-models`); se fija con `harness config set models.executor.model <proveedor/id>`.
+  // El executor NO cae a Claude si pi falla: el planner se detiene y avisa (un fallback manual se registra con el evento `fallback`).
   models: {
     planner: { provider: 'claude', model: 'claude-opus-5-5', effort: { T0: 'medium', T1: 'high', T2: 'high' } },
-    executor: { provider: 'codex', model: 'gpt-6.1-sol', effort: { T0: 'medium', T1: 'high', T2: 'high' } },
+    executor: { provider: 'pi', model: null, effort: { T0: 'medium', T1: 'high', T2: 'high' } },
     reviewer: {
       provider: 'claude', model: 'claude-sonnet-5-5', effort: { T0: 'medium', T1: 'high', T2: 'high' },
       // Solo si un humano registró que el executor fue Claude: el revisor pasa a la otra familia.
-      crossFamily: { provider: 'codex', model: 'gpt-6.1-sol', effort: { T0: 'medium', T1: 'high', T2: 'high' } },
+      crossFamily: { provider: 'pi', model: null, effort: { T0: 'medium', T1: 'high', T2: 'high' } },
     },
-    // Prueba: el designer en Codex con Pencil. Si se rechaza: `harness config set models.designer.use claude` (Claude Design con Sonnet 5.5 a xhigh).
-    designer: {
-      use: 'codex',
-      codex: { provider: 'codex', model: 'gpt-6.1-sol', effort: { T0: 'high', T1: 'high', T2: 'high' } },
-      claude: { provider: 'claude', model: 'claude-sonnet-5-5', effort: { T0: 'xhigh', T1: 'xhigh', T2: 'xhigh' } },
-    },
+    // Claude Design (Sonnet 5.5, xhigh): corre como subagente de Claude, no por `harness exec`.
+    designer: { provider: 'claude', model: 'claude-sonnet-5-5', effort: { T0: 'xhigh', T1: 'xhigh', T2: 'xhigh' } },
     // Ya no se lanza por Herdr: `harness explore` (script) y, con --deep, Haiku por `claude -p`. effort: null (no consta que Haiku 5.5 lo admita).
     explore: { provider: 'claude', model: 'claude-haiku-5-5', effort: null },
   },

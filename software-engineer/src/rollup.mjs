@@ -59,8 +59,9 @@ export function buildTaskRoles({ turns, codex }) {
     if (!c.task) continue;
     const base = c.role || 'executor';
     const role = Number(c.depth) === 0 ? base : `${base}/sub`;
-    const key = `${c.task}|${role}|codex|${c.model}`;
-    const g = groups.get(key) || { task: c.task, role, provider: 'codex', model: c.model, turns: 0, in: 0, out: 0, cache_read: 0, cache_write: 0, cost_est: 0 };
+    const prov = c.provider || 'codex';
+    const key = `${c.task}|${role}|${prov}|${c.model}`;
+    const g = groups.get(key) || { task: c.task, role, provider: prov, model: c.model, turns: 0, in: 0, out: 0, cache_read: 0, cache_write: 0, cost_est: 0 };
     g.turns += c.turns; g.in += c.in - c.cached; g.out += c.out; g.cache_read += c.cached; g.cost_est += c.cost_est;
     groups.set(key, g);
   }
@@ -91,4 +92,38 @@ export function buildTasks({ backlog, taskRoles, phases, events, git, codex, gat
       quota_5h_pts: Number(quota.toFixed(1)), quota_week_pts: Number(quotaWeek.toFixed(1)),
     };
   });
+}
+
+// Compara ejecutores (codex vs pi vs …) sobre las tareas ya cerradas, por tier: con tiers distintos la comparación engaña.
+// first_try: tareas cuyo executor no falló ni una vez; los tiempos y tokens son promedios por tarea.
+export function compareExecutors(tasks) {
+  const groups = new Map();
+  for (const t of tasks) {
+    if (!t.executor || t.status !== 'done') continue;
+    const key = `${t.executor}|${t.tier}`;
+    groups.set(key, [...(groups.get(key) || []), t]);
+  }
+  const avg = (a, k) => sum(a, k) / a.length;
+  return [...groups].map(([key, a]) => {
+    const [executor, tier] = key.split('|');
+    return {
+      executor, tier, tasks: a.length,
+      first_try_pct: Math.round((100 * a.filter((t) => !Number(t.exec_failed)).length) / a.length),
+      exec_runs: Number(avg(a, 'exec_runs').toFixed(2)), gate_fail: Number(avg(a, 'gate_fail').toFixed(2)),
+      rejections: Number(avg(a, 'rejections').toFixed(2)), human_retries: Number(avg(a, 'human_retries').toFixed(2)),
+      exec_min: Number((avg(a, 'exec_s') / 60).toFixed(1)), wall_min: Number((avg(a, 'wall_s') / 60).toFixed(1)),
+      tokens_in_k: Math.round(avg(a, 'codex_in') / 1000), tokens_out_k: Number((avg(a, 'codex_out') / 1000).toFixed(1)),
+      cost_usd: Number(avg(a, 'codex_cost').toFixed(3)), total_cost_usd: Number(avg(a, 'total_cost').toFixed(3)),
+    };
+  }).sort((x, y) => x.tier.localeCompare(y.tier) || x.executor.localeCompare(y.executor));
+}
+
+export function compareMd(rows) {
+  if (!rows.length) return 'Sin tareas cerradas con executor registrado.\n';
+  const H = ['tier', 'executor', 'tareas', '1er intento %', 'exec/tarea', 'gate rojo', 'rechazos QA', 'reintentos humano', 'exec min', 'total min', 'tokens in k', 'tokens out k', 'costo ejecutor $', 'costo total $'];
+  const L = [`| ${H.join(' | ')} |`, `|${H.map(() => '---').join('|')}|`];
+  for (const r of rows) L.push(`| ${[r.tier, r.executor, r.tasks, r.first_try_pct, r.exec_runs, r.gate_fail, r.rejections, r.human_retries, r.exec_min, r.wall_min, r.tokens_in_k, r.tokens_out_k, r.cost_usd, r.total_cost_usd].join(' | ')} |`);
+  const small = rows.filter((r) => r.tasks < 5).length;
+  L.push('', `Promedios por tarea cerrada. Costos estimados: pi usa el costo que reporta el proveedor; Codex, la tabla de precios de defaults.mjs. ${small ? `Ojo: ${small} grupo(s) con menos de 5 tareas, aún no concluyente.` : ''}`);
+  return L.join('\n') + '\n';
 }

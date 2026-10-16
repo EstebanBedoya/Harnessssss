@@ -111,8 +111,8 @@ export function buildAgentsMd(name, p, legacy = null) {
     '- State and profile: `.harness/profile.json`, `.harness/backlog.json`; metrics in `.harness/metrics/*.toon`.',
     '- Next step of a task: `harness next <id>`. Only the script marks a task done.',
     '- Context between agents travels as Engram topic keys `harness/<task>/{plan,design,impl-report,review}`, never pasted.',
-    '- Roles: **planner** (Claude Opus, the session you talk to) and **reviewer / QA** (Claude Sonnet 5.5, a subagent); **executor**, **designer** (Pencil) and **explore** (read-only) run in Codex via `harness exec --role <role>`. `harness next <id>` says which one to launch; the executor never falls back to Claude on its own.',
-    '- Agent prompts live in `.claude/agents/` (Claude Code) and `.harness/prompts/` (Codex, generated). A single role can be called directly for small work.',
+    '- Roles: **planner** (Claude Opus, the session you talk to) and **reviewer / QA** (Claude Sonnet 5.5, a subagent); the **executor** runs in pi (pi.dev, headless) via `harness exec <id>`; **explore** is a local command and the **designer** (Claude Design) is a Claude subagent. `harness next <id>` says which one to launch; the executor never falls back to Claude on its own.',
+    '- Agent prompts live in `.claude/agents/` (Claude Code) and `.harness/prompts/` (pi, generated). A single role can be called directly for small work.',
     '- Use only the skills listed in `profile.skills`.',
   ];
   return `${L.join('\n')}\n`;
@@ -324,10 +324,10 @@ export function installRoleSkills(root, profile) {
   return done;
 }
 
-// ---------- Prompt de rol para agentes que corren en Codex ----------
+// ---------- Prompt de rol para agentes que corren en pi ----------
 
-// Codex no lee `.claude/agents`: el cuerpo del agente (sin el frontmatter de Claude Code) más el bloque del proyecto
-// se escribe en `.harness/prompts/<rol>.md` y la tarea le dice a Codex que lo lea. Se pasa una referencia, no el contenido.
+// pi no lee `.claude/agents`: el cuerpo del agente (sin el frontmatter de Claude Code) más el bloque del proyecto
+// se escribe en `.harness/prompts/<rol>.md` y `harness exec` lo añade al system prompt (--append-system-prompt).
 export function rolePromptText(role, name, profile, srcDir = CORE_AGENTS_DIR) {
   const tpl = readFileSync(join(srcDir, `${role}.md`), 'utf8').replace(/^---\n[\s\S]*?\n---\n/, '').trim();
   return `${tpl}\n\n${projectBlock(role, name, profile)}\n`;

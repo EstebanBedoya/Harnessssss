@@ -13,7 +13,7 @@ import { loadBacklog, loadProfile } from '../src/store.mjs';
 import { parseTranscript, costOf, collect } from '../src/metrics.mjs';
 import { readRows } from '../src/toonfile.mjs';
 import { proposeProfile } from '../src/init.mjs';
-import { chmodSync } from 'node:fs';
+import { chmodSync, unlinkSync } from 'node:fs';
 
 const P = { ...DEFAULT_PROFILE, tiers: { t2: ['migrations/**', 'src/**/auth/**'], t1: [], ui: ['src/components/**'] }, gate: { cmd: 'true' } };
 const tmp = () => mkdtempSync(join(tmpdir(), 'harness-'));
@@ -37,34 +37,34 @@ test('classify: gana el tier más alto y detiene docs que toca src', () => {
   assert.equal(classify(P, 'nada', []).ok, false);
 });
 
-test('router: Claude solo planner y QA (Sonnet 5.5); executor, designer y explore en Codex; sin fallback del executor', () => {
+test('router: Claude planner, QA y designer; el executor corre en pi; sin fallback del executor', () => {
   assert.deepEqual(route(P, 'planner', { tier: 'T1' }), { role: 'planner', provider: 'claude', model: 'claude-opus-5-5', effort: 'high' });
-  assert.deepEqual(route(P, 'executor', { tier: 'T1' }), { role: 'executor', provider: 'codex', model: 'gpt-6.1-sol', effort: 'high' });
+  assert.deepEqual(route(P, 'executor', { tier: 'T1' }), { role: 'executor', provider: 'pi', model: null, effort: 'high' });
   assert.equal(route(P, 'executor', { tier: 'T1', attempt: 1 }).effort, 'xhigh'); // un reintento sube un nivel
   assert.equal(route(P, 'executor', { tier: 'T0' }).effort, 'medium');
   assert.equal(route(P, 'executor', { tier: 'T0', attempt: 1 }).effort, 'high');
-  // Sin Codex NO cae a Claude: espera y avisa
+  // Sin pi NO cae a Claude: espera y avisa
   const down = route(P, 'executor', { available: ['claude'] });
   assert.equal(down.wait, true);
   assert.match(down.reason, /no hay fallback a Claude/);
   assert.equal(route(P, 'executor', { available: [] }).wait, true);
-  // QA: Sonnet 5.5, de otra familia que el executor (Codex)
-  assert.deepEqual(route(P, 'reviewer', { tier: 'T2', executorProvider: 'codex' }), { role: 'reviewer', provider: 'claude', model: 'claude-sonnet-5-5', effort: 'high' });
-  // Solo si un humano registró que ejecutó Claude, el revisor pasa a Codex
-  assert.equal(route(P, 'reviewer', { tier: 'T2', executorProvider: 'claude' }).provider, 'codex');
+  // QA: Sonnet 5.5, de otra familia que el executor (pi)
+  assert.deepEqual(route(P, 'reviewer', { tier: 'T2', executorProvider: 'pi' }), { role: 'reviewer', provider: 'claude', model: 'claude-sonnet-5-5', effort: 'high' });
+  // Solo si un humano registró que ejecutó Claude, el revisor pasa a pi
+  assert.equal(route(P, 'reviewer', { tier: 'T2', executorProvider: 'claude' }).provider, 'pi');
   const noCross = { ...P, models: { ...P.models, reviewer: { ...P.models.reviewer, crossFamily: undefined } } };
   assert.equal(route(noCross, 'reviewer', { executorProvider: 'claude' }).wait, true);
-  assert.equal(route(P, 'reviewer', { executorProvider: 'codex', available: ['codex'] }).wait, true); // el QA es Claude y no está disponible
+  assert.equal(route(P, 'reviewer', { executorProvider: 'pi', available: ['pi'] }).wait, true); // el QA es Claude y no está disponible
   // explore: Haiku 5.5 (script + `claude -p`), sin esfuerzo
   assert.deepEqual(route(P, 'explore', { tier: 'T2' }), { role: 'explore', provider: 'claude', model: 'claude-haiku-5-5', effort: null });
 });
 
-test('designer: Codex con Pencil por defecto; una clave lo pasa a Claude (Sonnet 5.5, xhigh)', () => {
-  assert.deepEqual(route(P, 'designer', { tier: 'T1' }), { role: 'designer', provider: 'codex', model: 'gpt-6.1-sol', effort: 'high' });
-  const claude = { ...P, models: { ...P.models, designer: { ...P.models.designer, use: 'claude' } } };
-  assert.deepEqual(route(claude, 'designer', { tier: 'T1' }), { role: 'designer', provider: 'claude', model: 'claude-sonnet-5-5', effort: 'xhigh' });
+test('designer: siempre Claude Design (Sonnet 5.5, xhigh); el reintento no pasa de xhigh', () => {
+  assert.deepEqual(route(P, 'designer', { tier: 'T1' }), { role: 'designer', provider: 'claude', model: 'claude-sonnet-5-5', effort: 'xhigh' });
   assert.equal(route(P, 'designer', { tier: 'T1', attempt: 1 }).effort, 'xhigh');
-  assert.equal(route(claude, 'designer', { tier: 'T1', attempt: 1 }).effort, 'xhigh'); // el tope del reintento es xhigh
+  // un perfil viejo con models.designer.use / codex no cambia nada
+  const old = { ...P, models: { ...P.models, designer: { ...P.models.designer, use: 'claude', codex: { model: 'x' } } } };
+  assert.equal(route(old, 'designer', { tier: 'T1' }).provider, 'claude');
 });
 
 test('máquina de estados: T1 con revisión, reintento, bloqueo y T0 se cierra con el gate', () => {
@@ -101,26 +101,6 @@ test('máquina de estados: T1 con revisión, reintento, bloqueo y T0 se cierra c
   applyEvent(root, P, 't0', 'exec_done');
   applyEvent(root, P, 't0', 'gate_pass');
   assert.equal(loadBacklog(root).tasks.t0.status, 'done'); // T0: basta el gate
-});
-
-test('UI con el designer en Codex: diseña en Codex, y la verificación visual la hace el QA (Claude tiene Chrome)', () => {
-  const root = tmp();
-  addTask(root, P, { id: 'u1', title: 'ui', category: 'feature', paths: ['src/components/**'] });
-  applyEvent(root, P, 'u1', 'approve');
-  const t = () => loadBacklog(root).tasks.u1;
-  const d = nextStep(P, t());
-  assert.deepEqual([d.role, d.phase, d.route.provider], ['designer', 'spec', 'codex']);
-  applyEvent(root, P, 'u1', 'design_failed'); // el designer terminó sin dejar nada
-  assert.deepEqual([t().status, t().attempts], ['approved', 1]);
-  assert.equal(nextStep(P, t()).route.effort, 'xhigh'); // reintento con más esfuerzo
-  applyEvent(root, P, 'u1', 'design_failed');
-  assert.equal(t().status, 'blocked'); // agotado: lo decide el humano
-  applyEvent(root, P, 'u1', 'human_retry');
-  applyEvent(root, P, 'u1', 'exec_started', { provider: 'codex' });
-  applyEvent(root, P, 'u1', 'exec_done');
-  applyEvent(root, P, 'u1', 'gate_pass');
-  const v = nextStep(P, t());
-  assert.deepEqual([v.role, v.phase, v.route.provider, v.route.model, v.events.done], ['reviewer', 'visual', 'claude', 'claude-sonnet-5-5', 'visual_done']);
 });
 
 test('UI con el designer en Claude: él mismo hace el diseño y la verificación visual; design_done reinicia los intentos', () => {
@@ -218,7 +198,7 @@ test('init: AGENTS.md corto (≤ 80 líneas) con gate, tiers y reglas de git', (
   assert.match(md, /`npm run typecheck && npm run lint && npm test`/);
   assert.match(md, /supabase\/migrations\/\*\*/);
   assert.match(md, /only the user pushes/);
-  assert.match(md, /executor\*\*, \*\*designer\*\* \(Pencil\) and \*\*explore\*\* \(read-only\) run in Codex/); // el reparto vigente
+  assert.match(md, /executor\*\* runs in pi.*designer\*\* \(Claude Design\)/); // el reparto vigente
   assert.match(md, /never falls back to Claude/);
 });
 
@@ -678,7 +658,7 @@ test('fallback: queda registrado quién ejecutó y el reviewer pasa a la otra fa
   const root = tmp();
   addTask(root, P, { id: 'k1', title: 'x', category: 'feature', paths: ['src/**'] });
   applyEvent(root, P, 'k1', 'approve');
-  applyEvent(root, P, 'k1', 'exec_started', { provider: 'codex' });
+  applyEvent(root, P, 'k1', 'exec_started', { provider: 'pi' });
   applyEvent(root, P, 'k1', 'exec_done');                       // estado erróneo: gating
   const t = applyEvent(root, P, 'k1', 'fallback', { provider: 'claude' });
   assert.deepEqual([t.status, t.executor], ['executing', 'claude']);
@@ -686,7 +666,7 @@ test('fallback: queda registrado quién ejecutó y el reviewer pasa a la otra fa
   applyEvent(root, P, 'k1', 'gate_pass');
   const n = nextStep(P, loadBacklog(root).tasks.k1);
   assert.equal(n.role, 'reviewer');
-  assert.equal(n.route.provider, 'codex');                       // el executor real fue Claude
+  assert.equal(n.route.provider, 'pi');                          // el executor real fue Claude
 });
 
 import { codexCost, findRollouts, parseRollout } from '../src/codex.mjs';
@@ -809,7 +789,7 @@ test('informe: legible, con la config real de Codex, la cuota y el uso fuera de 
   const tasks = buildTasks({ backlog: bk, taskRoles: roles, phases: buildPhases(bk), events: buildEvents(bk), git: [], codex });
   const out = report({ tasks, task_roles: roles, turns, codex, quota: [{ plan: 'plus', end_ts: '2026-10-02T18:00:00Z', p5h_end: 43, week_end: 8 }] });
   assert.match(out, /## t1  \(feature T2, done\)/);
-  assert.match(out, /4 ejecuciones de Codex \(1 sin resultado\)/);
+  assert.match(out, /4 ejecuciones de pi\/Codex \(1 sin resultado\)/);
   assert.match(out, /gpt-6\.1-sol xhigh \(danger-full-access\)/);
   assert.match(out, /ventana de 5 h 43% usada/);
   assert.match(out, /Claude fuera de las tareas del harness, en el mismo período: 1 turnos, \$9\.00/);
@@ -892,22 +872,22 @@ test('config: cambiar una clave del perfil escribe solo esa clave y el router la
   writeFileSync(join(root, 'package.json'), '{}');
   mkdirSync(join(root, '.harness'));
   writeFileSync(join(root, '.harness/profile.json'), JSON.stringify({ gate: { cmd: 'pnpm test' } }));
-  assert.equal(getProfileValue(loadProfile(root), 'models.designer.use'), 'codex'); // valor por defecto
-  setProfileValue(root, 'models.designer.use', 'claude');
+  assert.equal(getProfileValue(loadProfile(root), 'models.executor.model'), null); // por defecto: el modelo de pi
+  setProfileValue(root, 'models.executor.model', 'prov/id');
   const raw = JSON.parse(readFileSync(join(root, '.harness/profile.json'), 'utf8'));
-  assert.deepEqual(raw, { gate: { cmd: 'pnpm test' }, models: { designer: { use: 'claude' } } }); // no vuelca los valores por defecto
+  assert.deepEqual(raw, { gate: { cmd: 'pnpm test' }, models: { executor: { model: 'prov/id' } } }); // no vuelca los valores por defecto
   const prof = loadProfile(root);
-  assert.equal(route(prof, 'designer', { tier: 'T1' }).provider, 'claude');
-  assert.equal(route(prof, 'executor', { tier: 'T1' }).provider, 'codex'); // lo demás sigue por defecto
+  assert.equal(route(prof, 'executor', { tier: 'T1' }).model, 'prov/id');
+  assert.equal(route(prof, 'designer', { tier: 'T1' }).provider, 'claude'); // lo demás sigue por defecto
   assert.equal(getProfileValue(prof, 'models.nada.x'), undefined);
 });
 
-test('prompt de rol para Codex: sin frontmatter de Claude Code, con Pencil y el bloque del proyecto', () => {
+test('prompt de rol para pi: sin frontmatter de Claude Code y con el bloque del proyecto', () => {
   const p = { stack: { languages: ['ts'], frameworks: ['next'] }, gate: { cmd: 'pnpm test' }, git: { integration: 'develop', deploy: 'main' }, tiers: { t2: [], ui: ['src/components/**'] }, agents: { designer: { skills: ['frontend-design'] }, executor: { skills: ['zod'] } } };
   const d = rolePromptText('designer', 'demo', p);
   assert.ok(!d.startsWith('---'));
   assert.doesNotMatch(d, /^model:/m);
-  assert.match(d, /Pencil MCP/);
+  assert.match(d, /Claude Design/);
   assert.match(d, /Skills you may use \(only these\): `frontend-design`/);
   assert.match(rolePromptText('executor', 'demo', p), /`zod`/);
   assert.match(rolePromptText('reviewer', 'demo', p), /Visual check/);
@@ -957,26 +937,55 @@ test('métricas de Codex: el rol de cada sesión sale de runs.toon y los subagen
   assert.deepEqual(roles.map((r) => r.role).sort(), ['designer', 'designer/sub', 'executor']);
 });
 
-import { judgeRun, pencilAppRunning } from '../src/verdict.mjs';
+import { judgeRun } from '../src/verdict.mjs';
 import { finalAgentMessage, findRolloutById } from '../src/codex.mjs';
 
-test('veredicto de una corrida de Codex: FAILED es fallo aunque exista la respuesta; sin respuesta solo valen los cambios reales', () => {
+test('veredicto de una corrida de pi: FAILED es fallo aunque exista la respuesta; sin respuesta solo valen los cambios reales', () => {
   assert.deepEqual(judgeRun({ role: 'executor', reply: 'DONE hecho', changed: false }), { ok: true });
-  const failed = judgeRun({ role: 'designer', reply: 'FAILED get_editor_state: Pencil desktop connection failed', changed: true });
+  const failed = judgeRun({ role: 'designer', reply: 'FAILED sin conexión con el canvas', changed: true });
   assert.equal(failed.ok, false); // aunque haya archivos en design/, lo que dijo Codex manda
-  assert.match(failed.reason, /Pencil desktop connection failed/);
-  assert.equal(judgeRun({ role: 'executor', reply: '', changed: true }).ok, true); // olvidó escribir su línea pero trabajó
+  assert.match(failed.reason, /sin conexión con el canvas/);
+  assert.equal(judgeRun({ role: 'executor', reply: '', changed: true }).ok, false); // archivos sucios sin commits no prueban nada
+  assert.equal(judgeRun({ role: 'executor', reply: '', commits: 2 }).ok, true); // olvidó escribir su línea pero commiteó
+  assert.equal(judgeRun({ role: 'designer', reply: '', changed: true }).ok, true);
   assert.equal(judgeRun({ role: 'executor', reply: '', changed: false }).ok, false);
   assert.equal(judgeRun({ role: 'explore', reply: '', changed: true }).ok, false); // explore nunca cambia nada
   assert.equal(judgeRun({ role: 'explore', reply: 'DONE hay 3 archivos', changed: false }).ok, true);
   assert.equal(judgeRun({ role: 'executor', reply: '  failed: sin red', changed: true }).ok, false); // mayúsculas o espacios no la salvan
 });
 
-test('Pencil: solo cuenta la app de escritorio, no los servidores MCP sueltos', () => {
-  const soloMcp = '/Applications/Pencil.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64 --app desktop\n/usr/bin/other';
-  assert.equal(pencilAppRunning(() => soloMcp), false);
-  assert.equal(pencilAppRunning(() => `${soloMcp}\n/Applications/Pencil.app/Contents/MacOS/Pencil -psn_0_1234`), true);
-  assert.equal(pencilAppRunning(() => ''), false);
+test('veredicto: el error del proveedor mata la corrida aunque haya archivos; FAILED con commits nuevos pasa al gate', () => {
+  const dead = judgeRun({ role: 'executor', reply: '', changed: true, screen: 'stream error: usage_limit_exceeded' });
+  assert.equal(dead.ok, false);
+  assert.match(dead.reason, /proveedor/);
+  assert.equal(judgeRun({ role: 'executor', reply: 'FAILED reuse-check duplicate', commits: 3 }).ok, true);
+  assert.equal(judgeRun({ role: 'executor', reply: 'FAILED usage_limit_exceeded', commits: 3 }).ok, false);
+});
+
+import { freeAgentName } from '../src/herdr.mjs';
+import { setTaskPaths, validEvents } from '../src/tasks.mjs';
+
+test('freeAgentName: renombra solo si el nombre está tomado', () => {
+  const calls = [];
+  assert.equal(freeAgentName('exec-x', { get: () => { throw new Error('agent_not_found'); }, rename: (...a) => calls.push(a) }), false);
+  assert.equal(freeAgentName('exec-x', { get: () => ({}), rename: (...a) => calls.push(a), stamp: () => 1234567 }), true);
+  assert.equal(calls.length, 1);
+  assert.ok(calls[0][1].length <= 31 && calls[0][1].startsWith('exec-x-o-'));
+});
+
+test('tareas: redesign vuelve a approved sin diseño; paths edita el alcance; el error lista los eventos válidos', () => {
+  const root = mkdtempSync(join(tmpdir(), 'tk-'));
+  const prof = { ...P, tiers: { ...P.tiers, ui: ['src/ui/**'] } };
+  addTask(root, prof, { id: 'r1', title: 't', category: 'fix', paths: ['src/a.ts'] });
+  applyEvent(root, prof, 'r1', 'approve');
+  applyEvent(root, prof, 'r1', 'exec_started', { provider: 'codex' });
+  assert.throws(() => applyEvent(root, prof, 'r1', 'human_retry'), /válidos: .*exec_done/);
+  const t = setTaskPaths(root, prof, 'r1', { add: ['src/ui/b.tsx'], remove: ['src/a.ts'] });
+  assert.deepEqual(t.paths, ['src/ui/b.tsx']); assert.equal(t.ui, true);
+  const r = applyEvent(root, prof, 'r1', 'redesign');
+  assert.deepEqual([r.status, r.designed], ['approved', false]);
+  assert.equal(nextStep(prof, r).role, 'designer');
+  assert.ok(validEvents(prof, { ...r, status: 'blocked' }).includes('human_retry'));
 });
 
 test('respuesta final de Codex: se lee de su sesión (task_complete) aunque no pudiera escribir archivos', () => {
@@ -1189,4 +1198,115 @@ test('reuse-check --strict: sale con código 1 solo si hay un duplicado', () => 
     writeFileSync(join(r, 'src', 'lib', 'pesos.ts'), 'export function slug(t: string): string {\n  const lower = t.toLowerCase().trim();\n  const dashed = lower.replace(/[^a-z0-9]+/g, "-");\n  return dashed.replace(/^-|-$/g, "");\n}\n');
     assert.equal(cli('--strict').status, 0); // nada duplicado: no bloquea
   } finally { cleanGraph(); }
+});
+
+import { parsePiJsonl, piArgs, resolvePi } from '../src/pi.mjs';
+
+test('pi: JSONL -> respuesta final, tokens y costo sumados; un error de proveedor no deja respuesta', () => {
+  const ev = (o) => JSON.stringify(o);
+  const ok = [
+    ev({ type: 'session', id: 's1' }),
+    ev({ type: 'message_end', message: { role: 'user', content: 'x' } }),
+    ev({ type: 'message_end', message: { role: 'assistant', model: 'm', stopReason: 'toolUse', content: [{ type: 'text', text: 'trabajando' }], usage: { input: 100, output: 10, cacheRead: 50, cost: { total: 0.01 } } } }),
+    'línea cortada {',
+    ev({ type: 'message_end', message: { role: 'assistant', model: 'm', stopReason: 'stop', content: [{ type: 'text', text: 'DONE listo' }], usage: { input: 20, output: 5, cacheRead: 150, cost: { total: 0.02 } } } }),
+  ].join('\n');
+  const r = parsePiJsonl(ok);
+  assert.deepEqual([r.session, r.model, r.text, r.error, r.turns], ['s1', 'm', 'DONE listo', '', 2]);
+  assert.deepEqual([r.in, r.cached, r.out, r.cost], [320, 200, 15, 0.03]);
+  const bad = parsePiJsonl(ev({ type: 'message_end', message: { role: 'assistant', stopReason: 'error', errorMessage: 'usage limit', content: [], usage: {} } }));
+  assert.deepEqual([bad.text, bad.error], ['', 'usage limit']);
+});
+
+test('pi: banderas headless; el modelo solo se pasa si el perfil lo fija', () => {
+  const base = piArgs({ model: null, effort: 'high' }, { promptFile: '/p/executor.md', prompt: 'haz x' });
+  assert.deepEqual(base, ['--mode', 'json', '--no-session', '--approve', '--append-system-prompt', '/p/executor.md', '--thinking', 'high', '--', 'haz x']);
+  assert.ok(piArgs({ model: 'prov/id', effort: null }, { prompt: 'x' }).join(' ').includes('--model prov/id'));
+  assert.ok(!piArgs({ model: 'prov/id', effort: null }, { prompt: 'x' }).includes('--thinking'));
+});
+
+test('pi: PI_BIN y pi.bin mandan; si no existe el ejecutable fijado no se inventa otro', () => {
+  assert.equal(resolvePi({}, { env: { PI_BIN: '/x/pi' }, exists: () => true }), '/x/pi');
+  assert.equal(resolvePi({ pi: { bin: '/y/pi' } }, { env: {}, exists: (f) => f === '/y/pi' }), '/y/pi');
+  assert.equal(resolvePi({ pi: { bin: '/y/pi' } }, { env: {}, exists: () => false }), null);
+  assert.equal(resolvePi({}, { env: { PATH: '' }, home: '/h', versions: () => ['v22.1.0', 'v24.2.0'], exists: (f) => f === '/h/.nvm/versions/node/v24.2.0/bin/pi' }), '/h/.nvm/versions/node/v24.2.0/bin/pi');
+});
+
+import { compareExecutors, compareMd } from '../src/rollup.mjs';
+
+test('comparar ejecutores: agrupa por executor y tier, solo tareas cerradas; avisa si hay pocas', () => {
+  const t = (executor, tier, o = {}) => ({ executor, tier, status: 'done', exec_failed: 0, exec_runs: 1, gate_fail: 0, rejections: 0, human_retries: 0, exec_s: 120, wall_s: 600, codex_in: 10000, codex_out: 1000, codex_cost: 0.1, total_cost: 0.5, ...o });
+  const rows = compareExecutors([t('codex', 'T1'), t('codex', 'T1', { exec_failed: 1, exec_runs: 2 }), t('pi', 'T1'), t('pi', 'T1', { status: 'blocked' }), t('', 'T1')]);
+  assert.deepEqual(rows.map((r) => [r.executor, r.tier, r.tasks]), [['codex', 'T1', 2], ['pi', 'T1', 1]]);
+  assert.equal(rows[0].first_try_pct, 50);
+  assert.equal(rows[0].exec_runs, 1.5);
+  assert.equal(rows[1].exec_min, 2);
+  assert.match(compareMd(rows), /menos de 5 tareas/);
+  assert.match(compareMd([]), /Sin tareas cerradas/);
+});
+
+import { formatPiEvent } from '../src/pi.mjs';
+
+test('pi en vivo: una línea legible por herramienta y por mensaje; los deltas no se muestran', () => {
+  assert.equal(formatPiEvent({ type: 'tool_execution_start', toolName: 'bash', args: { command: 'ls  -la\nfoo' } }), '🔧 bash ls -la foo');
+  assert.match(formatPiEvent({ type: 'tool_execution_end', isError: false, durationMs: 12 }), /✓ 12 ms/);
+  assert.match(formatPiEvent({ type: 'tool_execution_end', isError: true, result: { content: [{ text: 'boom' }] } }), /✗ error · boom/);
+  assert.match(formatPiEvent({ type: 'message_end', message: { role: 'assistant', content: [{ type: 'text', text: 'DONE listo' }], usage: { input: 5, cacheRead: 10, output: 2 } } }), /💬 DONE listo.*15 in \/ 2 out/);
+  assert.equal(formatPiEvent({ type: 'message_update' }), null);
+  assert.equal(formatPiEvent({ type: 'message_end', message: { role: 'user', content: 'x' } }), null);
+  assert.match(formatPiEvent({ type: 'message_end', message: { role: 'assistant', stopReason: 'error', errorMessage: 'sin cuota' } }), /✗ sin cuota/);
+});
+
+import { agentStates, discoverProjects, fleetRoots, legacyKeys, liveRuns, projectStatus } from '../src/fleet.mjs';
+import { ago, money, pad, renderFrame, tok } from '../src/tui.mjs';
+
+test('flota: descubre proyectos con .harness/profile.json sin bajar dentro de ellos ni a node_modules', () => {
+  const root = tmp();
+  for (const d of ['a', 'grupo/b', 'grupo/b/sub', 'node_modules/x', 'c']) mkdirSync(join(root, d, '.harness'), { recursive: true });
+  for (const d of ['a', 'grupo/b', 'grupo/b/sub', 'node_modules/x']) writeFileSync(join(root, d, '.harness', 'profile.json'), '{}');
+  assert.deepEqual(discoverProjects([root]).map((p) => p.slice(root.length + 1)), ['a', 'grupo/b']);
+  assert.deepEqual(fleetRoots({ home: '/h', exists: () => false }), ['/h/Projects', '/h/Lab', '/h/Servers']);
+  assert.deepEqual(fleetRoots({ home: '/h', exists: () => true, read: () => '{"roots":["~/Work"]}' }), ['/h/Work']);
+});
+
+test('flota: agentes desactualizados, llaves viejas y corridas de pi en vivo', () => {
+  const root = tmp();
+  const prof = loadProfile(root);
+  writeFileSync(join(root, 'package.json'), '{}');
+  mkdirSync(join(root, '.harness'), { recursive: true });
+  writeFileSync(join(root, '.harness/profile.json'), JSON.stringify({ gate: { cmd: 'true' }, codex: { sandbox: 'x' }, models: { designer: { use: 'claude' } } }));
+  installAgents(root, { profile: loadProfile(root), name: root.split('/').pop() });
+  assert.ok(agentStates(root, loadProfile(root)).every((a) => a.state === 'ok'));
+  writeFileSync(join(root, '.claude/agents/planner.md'), 'viejo');
+  assert.deepEqual(agentStates(root, loadProfile(root)).filter((a) => a.state !== 'ok'), [{ role: 'planner', state: 'stale' }]);
+  unlinkSync(join(root, '.claude/agents/designer.md'));
+  assert.ok(agentStates(root, loadProfile(root)).some((a) => a.role === 'designer' && a.state === 'missing'));
+  assert.deepEqual(legacyKeys(root), ['codex', 'models.designer.use']);
+  const st = projectStatus(root);
+  assert.equal(st.outdated, true);
+  assert.match(st.issues.join(' '), /desactualizado.*designer.*planner|planner.*designer/);
+  void prof;
+  // logs de pi: uno terminado y otro que sigue escribiendo
+  mkdirSync(join(root, '.harness/logs'));
+  writeFileSync(join(root, '.harness/logs/t1.jsonl'), '{"type":"tool_execution_start","toolName":"bash","args":{"command":"go test"}}\n');
+  writeFileSync(join(root, '.harness/logs/t2.jsonl'), '{"type":"agent_settled","aborted":false}\n');
+  const runs = Object.fromEntries(liveRuns(root).map((r) => [r.task, r.running]));
+  assert.deepEqual(runs, { t1: true, t2: false });
+  assert.equal(liveRuns(root, Date.now() + 10 * 60000).find((r) => r.task === 't1').running, false); // sin escribir hace rato: ya no corre
+  assert.match(liveRuns(root).find((r) => r.task === 't1').last, /bash go test/);
+});
+
+test('tui: formato y cuadro completo desde una foto, sin color en pruebas', () => {
+  assert.equal(money(0.5), '$0.50'); assert.equal(money(205.4), '$205'); assert.equal(tok(265113937), '265.1M'); assert.equal(tok(900), '900');
+  assert.equal(ago(45000), '45s'); assert.equal(ago(10 * 60000), '10m');
+  assert.equal(pad('abcdef', 4), 'abc…'); assert.equal(pad('ab', 4, true), '  ab');
+  const proj = (name, extra = {}) => ({ root: `/x/${name}`, name, configured: true, issues: [], outdated: false, gate: 'make gate', executor: { provider: 'pi', model: 'openai/gpt-6.1-sol' }, designer: { provider: 'claude', model: 'm' }, agents: [], runs: [], panes: [], tasks: { done: 2, executing: 1 }, taskList: [], metrics: { tasks: [], count: 0, cost: 1.5, claudeCost: 1, externalCost: 0.5, tokensIn: 1000, tokensOut: 10 }, ...extra });
+  const snap = { now: 1000, projects: [proj('uno'), proj('dos', { outdated: true, issues: ['x'] })], totals: { projects: 2, running: 0, outdated: 1, tasks: 0, cost: 3, claudeCost: 2, externalCost: 1, tokensIn: 0, tokensOut: 0 }, compare: [] };
+  const f0 = renderFrame(snap, { tab: 0, sel: 0 }, { color: false });
+  assert.match(f0, /uno\s+○ al día\s+pi · gpt-6\.1-sol\s+make gate\s+2\/3/);
+  assert.match(f0, /dos\s+⚠ desactualizado/);
+  assert.match(f0, /2 proyectos · ○ nada corriendo · ⚠ 1 desactualizados/);
+  for (const ui of [{ tab: 1, sel: 0 }, { tab: 2, sel: 0, scope: 'proyecto' }, { tab: 0, sel: 1, detail: true }, { tab: 0, sel: 0, confirm: { text: '¿seguro?' } }]) assert.ok(renderFrame(snap, ui, { color: false }).length > 100);
+  assert.match(renderFrame(snap, { tab: 0, sel: 0, confirm: { text: '¿seguro?' } }, { color: false }), /¿seguro\? \(y\/n\)/);
+  assert.doesNotMatch(f0, /\x1b\[/); // sin color no hay códigos ANSI
 });

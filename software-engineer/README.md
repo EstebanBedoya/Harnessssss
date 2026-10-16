@@ -7,9 +7,9 @@ Orquestador determinista (sin LLM) para trabajar con agentes de código: guarda 
 | Rol | Corre en | Qué hace |
 |---|---|---|
 | `planner` | Claude (Opus) | Habla contigo, escribe spec y plan, orquesta al resto |
-| `executor` | Codex (vía Herdr) | Escribe el código dentro del scope aprobado |
+| `executor` | pi ([pi.dev](https://pi.dev), headless) | Escribe el código dentro del scope aprobado |
 | `reviewer` | Claude (Sonnet) | QA y revisión visual |
-| `designer` | Codex + Pencil (o Claude) | Diseño de UI |
+| `designer` | Claude (Sonnet) + Claude Design | Diseño de UI |
 | `explore` | Grafo + Haiku 5.5 | ¿Ya existe algo reutilizable? (`harness explore`, `harness reuse-check`); cualquier agente lo llama |
 
 El gate lo corre el script; ningún agente marca una tarea como `done`.
@@ -24,9 +24,9 @@ flowchart TD
     P -->|task add| PR[proposed]
     PR -->|el usuario aprueba| AP[approved]
 
-    AP -->|tarea con UI| D[Designer · Codex + Pencil<br/>fase spec]
+    AP -->|tarea con UI| D[Designer · Claude Design<br/>fase spec]
     D --> EX
-    AP -->|sin UI| EX[Executor · Codex<br/>escribe código en su scope]
+    AP -->|sin UI| EX[Executor · pi<br/>escribe código en su scope]
 
     EX -->|exec_done| G{{Gate · script<br/>corre gate.cmd}}
     G -->|falla| RT{¿quedan<br/>reintentos?}
@@ -49,12 +49,13 @@ flowchart TD
 Quién decide qué:
 - **El script** (`harness`) manda: calcula el siguiente paso, el modelo y el esfuerzo, corre el gate y marca `done`. Los agentes no se auto-aprueban.
 - **El planner** solo planifica y lanza lo que `harness next` indica; no escribe código ni reemplaza a un agente caído.
-- **Si Codex falla**, el script reintenta una vez con más esfuerzo y luego pasa la tarea a `blocked`. Cambiar el executor a Claude es una decisión humana.
+- **Si pi falla**, el script reintenta una vez con más esfuerzo y luego pasa la tarea a `blocked`. Cambiar el executor a Claude es una decisión humana.
 
 ## Requisitos
 - node ≥ 20 y pnpm (`brew install pnpm`)
 - Claude Code
-- Para `exec`: [Herdr](https://herdr.dev) y Codex CLI. Para el designer: la app Pencil abierta.
+- Para `exec`: [pi](https://pi.dev) (Node ≥ 22.19; `npm i -g --ignore-scripts @earendil-works/pi-coding-agent`), con `/login` hecho (suscripción o API key). Sus MCP (engram, codebase-memory) se declaran en `~/.pi/agent/mcp.json`; las skills de `~/.agents/skills` las encuentra solo. Modelo: el de pi, o `harness config set models.executor.model <proveedor/id>`.
+- pi no tiene sandbox ni aprobaciones: el aislamiento es el scope del plan, las reglas del prompt y el gate.
 
 ## Instalación (una vez por máquina)
 ```bash
@@ -88,7 +89,7 @@ El planner categoriza, escribe el plan, registra la tarea y te pide aprobación.
 harness task add T1 --title "Login con Google" --category feature --paths 'src/auth/**'
 harness task approve T1
 harness next T1                       # siguiente paso: rol, modelo, esfuerzo
-harness exec T1 --instruction "..."   # executor en Codex (pane lateral de Herdr)
+harness exec T1 --instruction "..."   # executor en pi (headless)
 harness explore --reindex                                                 # una vez por repo: indexa el grafo en modo full
 harness explore "formatear montos en pesos"                               # antes de escribir: ¿ya existe algo?
 harness explore "formatear montos en pesos" --deep                        # el código usa otros nombres: Haiku decide reuse/extend/new (se guarda en caché)
@@ -100,7 +101,7 @@ Categorías: `feature fix hotfix refactor perf docs test infrastructure chore re
 ### 4. Configuración y métricas
 ```bash
 harness config get models.designer.use
-harness config set models.designer.use claude   # designer en Claude en vez de Codex
+harness config set models.executor.model <proveedor/id>   # modelo del executor (proveedor/id de `pi --list-models`)
 harness agents sync                             # regenera el bloque de proyecto de cada agente tras editar el perfil
 harness metrics collect                         # métricas en .harness/metrics/*.toon
 harness metrics report [T1]                     # informe legible: gasto por rol, intentos, cuota
@@ -113,7 +114,7 @@ Todo comando acepta `--root DIR` para apuntar a otro proyecto.
 bin/harness.mjs      CLI
 src/classify.mjs     categoría + tier            src/tasks.mjs    máquina de estados
 src/router.mjs       modelo/esfuerzo por rol     src/gate.mjs     gate + scope manifest
-src/herdr.mjs        Codex por Herdr             src/metrics.mjs  métricas TOON
+src/pi.mjs           pi (headless)               src/metrics.mjs  métricas TOON
 src/init.mjs         detección del proyecto      src/defaults.mjs perfil y precios por defecto
 agents/*.md          prompts de cada rol         skill/SKILL.md   comando /harness
 test/                node --test
@@ -127,4 +128,4 @@ pnpm test
 ## Notas
 - Los prompts están en inglés por eficiencia de tokens; los agentes responden en tu idioma.
 - Los costos en `src/defaults.mjs` (`PRICES`): la escritura de caché y la lectura de Haiku son supuestos.
-- Si Codex no está disponible, el executor no cae a Claude: el planner se detiene y avisa.
+- Si pi no está disponible, el executor no cae a Claude: el planner se detiene y avisa.

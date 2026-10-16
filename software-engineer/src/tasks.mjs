@@ -24,8 +24,12 @@ export function addTask(root, profile, { id, title, category, paths = [] }) {
   return b.tasks[id];
 }
 
+const ALL_EVENTS = ['approve', 'design_done', 'design_failed', 'exec_started', 'exec_done', 'exec_failed', 'fallback', 'gate_pass', 'gate_fail', 'visual_done', 'review_started', 'verdict_approved', 'verdict_rejected', 'redesign', 'human_retry', 'human_cancel'];
+// Eventos que el estado actual acepta (se prueban sobre una copia).
+export const validEvents = (profile, t) => ALL_EVENTS.filter((e) => { try { transition(profile, structuredClone(t), e, {}, true); return true; } catch { return false; } });
+
 // Transiciones. Solo el script marca done: ningún agente lo hace.
-function transition(profile, t, event, data = {}) {
+function transition(profile, t, event, data = {}, probe = false) {
   const retry = () => {
     if (t.attempts < profile.retries) { t.attempts += 1; t.status = 'executing'; } else t.status = 'blocked';
   };
@@ -48,9 +52,12 @@ function transition(profile, t, event, data = {}) {
     case 'gated:review_started': t.status = 'reviewing'; break;
     case 'reviewing:verdict_approved': t.status = 'done'; break;
     case 'reviewing:verdict_rejected': retry(); break;
+    // Volver a diseñar con la tarea ya aprobada o avanzada: el designer corre otra vez y el executor repite tras él.
+    case 'approved:redesign': case 'executing:redesign': case 'gating:redesign': case 'gated:redesign': case 'blocked:redesign':
+      t.designed = false; t.visualDone = false; t.gate = null; t.attempts = 0; t.status = 'approved'; break;
     case 'blocked:human_retry': t.attempts = 0; t.status = 'executing'; break;
     case 'blocked:human_cancel': t.status = 'cancelled'; break;
-    default: throw new Error(`evento ${event} no válido en estado ${t.status}`);
+    default: throw new Error(`evento ${event} no válido en estado ${t.status}; válidos: ${probe ? '' : validEvents(profile, t).join(', ') || '(ninguno)'}`);
   }
   // T0 sin UI: basta el gate (7.2). El script cierra la tarea.
   if (t.status === 'gated' && t.tier === 'T0' && (!t.ui || t.visualDone)) t.status = 'done';
@@ -83,8 +90,8 @@ export function nextStep(profile, t, opts = {}) {
     const events = extra.phase === 'visual' ? { start: null, done: 'visual_done' } : EVENTS[role];
     return { action: 'run', role, route: rt, refs: k, task: t.id, events, ...extra };
   };
-  // La verificación visual de la UI real necesita un navegador: si el designer corre en Codex (sin Chrome), la hace el QA en Claude Code.
-  const visualRole = profile.models.designer?.use === 'codex' ? 'reviewer' : 'designer';
+  // La verificación visual de la UI real necesita un navegador: la hace el designer (Claude, con Chrome).
+  const visualRole = 'designer';
   switch (t.status) {
     case 'proposed': return { action: 'await_approval', task: t.id, tier: t.tier, category: t.category };
     case 'approved':
@@ -99,4 +106,18 @@ export function nextStep(profile, t, opts = {}) {
     case 'blocked': return { action: 'human', task: t.id, reason: `agotó ${profile.retries + 1} intento(s)` };
     default: return { action: 'none', status: t.status };
   }
+}
+
+// Agrega o quita rutas del alcance de una tarea sin editar backlog.json a mano (`tasks` está indexado por id).
+export function setTaskPaths(root, profile, id, { add = [], remove = [] }) {
+  const b = loadBacklog(root);
+  const t = b.tasks[id];
+  if (!t) throw new Error(`tarea desconocida: ${id}`);
+  const paths = [...new Set([...t.paths.filter((p) => !remove.includes(p)), ...add])];
+  const c = classify(profile, t.category, paths);
+  if (!c.ok) throw new Error(c.errors.join('; '));
+  t.paths = paths; t.tier = c.tier; t.ui = c.ui; // el alcance nuevo puede subir el tier o activar la UI
+  t.history.push({ ts: now(), event: 'paths_changed', ...(add.length ? { add } : {}), ...(remove.length ? { remove } : {}) });
+  saveBacklog(root, b);
+  return t;
 }

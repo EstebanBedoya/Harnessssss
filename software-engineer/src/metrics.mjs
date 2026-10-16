@@ -155,11 +155,19 @@ export function collectCodex(root, metricsDir, { dir, windows = [], sinceMs = 0 
   };
 }
 
+export const piRunsAsSessions = (runs) => runs.filter((r) => r.provider === 'pi').map((r) => ({
+  session: r.session || `${r.task}-${r.ts}`, task: r.task, role: r.role || 'executor', provider: 'pi', model: r.model || 'pi', depth: 0, turns: Number(r.turns) || 0,
+  in: Number(r.in) || 0, cached: Number(r.cached) || 0, out: Number(r.out) || 0, cost_est: Number(r.cost) || 0, wall_s: Math.round((Number(r.ms) || 0) / 1000),
+  started: r.ts, q5h_start: '', q5h_end: '', qweek_start: '', qweek_end: '',
+}));
+
 export function collectRollup(root, metricsDir) {
   const backlog = loadBacklog(root);
   const events = buildEvents(backlog); const phases = buildPhases(backlog);
   const git = Object.values(backlog.tasks).map((t) => gitStats(root, t)).filter(Boolean);
-  const turns = readRows(metricsDir, 'turns'); const codex = readRows(metricsDir, 'codex_sessions'); const gates = readRows(metricsDir, 'gates');
+  const turns = readRows(metricsDir, 'turns'); const gates = readRows(metricsDir, 'gates');
+  // Sesiones externas: las históricas de Codex (rollouts) y las corridas de pi (runs.toon trae sus tokens y costo al momento).
+  const codex = [...readRows(metricsDir, 'codex_sessions'), ...piRunsAsSessions(readRows(metricsDir, 'runs'))];
   const taskRoles = buildTaskRoles({ turns, codex });
   const tasks = buildTasks({ backlog, taskRoles, phases, events, git, codex, gates });
   return {

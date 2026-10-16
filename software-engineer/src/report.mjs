@@ -9,18 +9,18 @@ export function report(t, { only = null } = {}) {
   const tasks = t.tasks.filter((x) => !only || x.task === only);
   const q = [...t.quota].sort((a, b) => String(a.end_ts).localeCompare(String(b.end_ts))).at(-1);
   L.push(`# Métricas del harness`, '');
-  if (q) L.push(`Cuota de Codex (suscripción ${q.plan}), última lectura ${String(q.end_ts).slice(0, 16).replace('T', ' ')} UTC: ventana de 5 h ${q.p5h_end}% usada, semanal ${q.week_end}% usada.`, '');
+  if (q) L.push(`Cuota de Codex (histórica) (suscripción ${q.plan}), última lectura ${String(q.end_ts).slice(0, 16).replace('T', ' ')} UTC: ventana de 5 h ${q.p5h_end}% usada, semanal ${q.week_end}% usada.`, '');
   let total = 0;
   for (const x of tasks) {
     total += Number(x.total_cost) || 0;
     L.push(`## ${x.task}  (${x.category} ${x.tier}, ${x.status})`, '');
     L.push(`- Reloj: ${mins(x.wall_s)} (incluye esperas por el humano). Ejecutar ${mins(x.exec_s)} · gate ${mins(x.gate_s)} · revisión ${mins(x.review_s)} (puede incluir esperas)${Number(x.rework_s) ? ` · rehacer ${mins(x.rework_s)}` : ''}`);
-    L.push(`- Intentos: ${x.exec_runs} ejecuciones de Codex (${x.exec_failed} sin resultado), ${x.gate_fail} gate en rojo, ${x.rejections} revisión rechazada, ${x.human_retries} reintento humano`);
+    L.push(`- Intentos: ${x.exec_runs} ejecuciones de pi/Codex (${x.exec_failed} sin resultado), ${x.gate_fail} gate en rojo, ${x.rejections} revisión rechazada, ${x.human_retries} reintento humano`);
     if (x.commits !== '') L.push(`- Código: ${x.commits} commits, ${x.files} archivos, +${x.additions} −${x.deletions}`);
     const cx = t.codex.filter((c) => c.task === x.task);
-    const cfg = [...new Set(cx.map((c) => `${c.model} ${c.effort} (${c.sandbox})`))];
+    const cfg = [...new Set(cx.map((c) => `${c.model}${c.effort ? ` ${c.effort}` : ''}${c.sandbox ? ` (${c.sandbox})` : ''}`))];
     if (cx.length) {
-      L.push(`- Codex: ${cx.length} sesiones (${cx.filter((c) => Number(c.depth) > 0).length} de subagentes), config real: ${cfg.join('; ')}`);
+      L.push(`- Externo (pi/Codex): ${cx.length} sesiones (${cx.filter((c) => Number(c.depth) > 0).length} de subagentes), config real: ${cfg.join('; ')}`);
       L.push(`  tokens: entrada ${k(x.codex_in)} + caché ${k(x.codex_cached)} · salida ${k(x.codex_out)} · costo estimado ${usd(x.codex_cost)} · cuota usada ≈ ${x.quota_5h_pts} pts (5 h), ${x.quota_week_pts} pts (semana)`);
     }
     const roles = t.task_roles.filter((r) => r.task === x.task);
@@ -28,7 +28,7 @@ export function report(t, { only = null } = {}) {
       L.push('', `  ${pad('rol', 14)}${pad('proveedor', 10)}${pad('modelo', 20)}${pad('turnos', 8, true)}${pad('salida', 9, true)}${pad('caché leída', 13, true)}${pad('costo est.', 12, true)}`);
       for (const r of roles) L.push(`  ${pad(r.role, 14)}${pad(r.provider, 10)}${pad(r.model, 20)}${pad(r.turns, 8, true)}${pad(k(r.out), 9, true)}${pad(k(r.cache_read), 13, true)}${pad(usd(r.cost_est), 12, true)}`);
     }
-    L.push('', `  **Total estimado: ${usd(x.total_cost)}** (Claude ${usd(x.claude_cost)} + Codex ${usd(x.codex_cost)})`, '');
+    L.push('', `  **Total estimado: ${usd(x.total_cost)}** (Claude ${usd(x.claude_cost)} + externo ${usd(x.codex_cost)})`, '');
   }
   if (!only) {
     // "Fuera de las tareas" = lo ocurrido en el mismo período que ellas (el transcript trae todo el historial del proyecto).
