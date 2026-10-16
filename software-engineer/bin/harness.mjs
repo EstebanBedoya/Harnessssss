@@ -280,9 +280,9 @@ try {
       break;
     }
     case 'tui': {
-      // Panel de todos los proyectos con harness. `--once [--view proyectos|vivo|metricas]` imprime un cuadro y sale (útil para scripts).
+      // Panel de todos los proyectos con harness. `--once [--view proyectos|vivo|tareas|consumo]` imprime un cuadro y sale (útil para scripts).
       if (!flag.once) { if (!process.stdout.isTTY) fail('la TUI necesita una terminal; usa --once para imprimir un cuadro'); runTui(); break; }
-      const tab = { proyectos: 0, vivo: 1, metricas: 2 }[flag.view || 'proyectos'] ?? 0;
+      const tab = { proyectos: 0, vivo: 1, tareas: 2, consumo: 3, metricas: 3 }[flag.view || 'proyectos'] ?? 0;
       console.log(renderFrame(fleetSnapshot(), { tab, sel: Number(flag.sel || 0), detail: !!flag.detail, scope: flag.scope || 'general' }, { width: Number(flag.width || 110), height: 40, color: !!process.stdout.isTTY }));
       break;
     }

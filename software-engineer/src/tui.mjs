@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { fleetSnapshot } from './fleet.mjs';
+import { fleetSnapshot, runLog } from './fleet.mjs';
 
 // Panel de control en ANSI puro (sin dependencias). Vistas: 1 Proyectos · 2 En vivo · 3 Métricas; Enter abre un proyecto.
 // Todo se dibuja desde `fleetSnapshot()`, que solo lee archivos; las únicas acciones que escriben son `s` (agents sync) y `c` (metrics collect), con confirmación.
@@ -27,12 +27,14 @@ export const tok = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `$
 export const ago = (ms) => { const s = Math.max(0, Math.round(ms / 1000)); return s < 90 ? `${s}s` : s < 5400 ? `${Math.round(s / 60)}m` : `${(s / 3600).toFixed(1)}h`; };
 export const bar = (v, max, w) => { const n = max > 0 ? Math.round((v / max) * w) : 0; return '█'.repeat(n) + '░'.repeat(Math.max(0, w - n)); };
 
-const TABS = ['Proyectos', 'En vivo', 'Métricas'];
+const TABS = ['Proyectos', 'En vivo', 'Tareas', 'Consumo'];
+
+const att = (c, snap) => { const r = snap.attention.filter((a) => a.level === 'red').length; const y = snap.attention.length - r; return `${r ? ` · ${c.red(`⚑ ${r} urgente(s)`)}` : ''}${y ? ` · ${c.yellow(`${y} esperan algo`)}` : ''}`; };
 
 function header(c, snap, tab, W) {
   const t = snap.totals;
   const tabs = TABS.map((n, i) => (i === tab ? c.inv(c.bold(` ${i + 1} ${n} `)) : c.gray(` ${i + 1} ${n} `))).join(' ');
-  const stats = `${c.cyan(t.projects)} proyectos · ${t.running ? c.green(`● ${t.running} corriendo`) : c.gray('○ nada corriendo')} · ${t.outdated ? c.yellow(`⚠ ${t.outdated} desactualizados`) : c.green('✓ al día')} · ${c.bold(money(t.cost))} en tareas`;
+  const stats = `${c.cyan(t.projects)} proyectos · ${t.running ? c.green(`● ${t.running} corriendo`) : c.gray('○ nada corriendo')} · ${t.outdated ? c.yellow(`⚠ ${t.outdated} desactualizados`) : c.green('✓ al día')} · ${c.bold(money(t.cost))} en tareas${att(c, snap)}`;
   return [`${c.bold(c.violet('◆ harness'))}  ${tabs}`, `${stats}`, c.gray('─'.repeat(W))];
 }
 
@@ -53,6 +55,11 @@ function viewProjects(c, snap, sel, W) {
     const row = `${pad(p.name, nameW)} ${pad(projectState(c, p), 17)} ${pad(ex, 30)} ${pad(p.gate || c.red('sin gate'), 18)} ${pad(`${done}/${total}`, 9)} ${pad(money(p.metrics.cost), 8, true)}`;
     L.push(i === sel ? c.inv(` ${strip(row)} `.slice(0, W)) : ` ${row}`);
   });
+  if (snap.attention.length) {
+    L.push('', `  ${c.bold('Requiere atención')}`);
+    for (const a of snap.attention.slice(0, 9)) L.push(`   ${a.level === 'red' ? c.red('⚑') : c.yellow('•')} ${pad(a.project, 18)} ${pad(a.task, 26)} ${pad(a.text, Math.max(20, W - 70))} ${c.gray(a.age ? ago(a.age) : '')}`);
+    if (snap.attention.length > 9) L.push(c.gray(`   … y ${snap.attention.length - 9} más`));
+  }
   if (!snap.projects.length) L.push(c.gray('  No encontré proyectos con .harness/profile.json. Raíces: ~/Projects, ~/Lab, ~/Servers (o ~/.harness/fleet.json).'));
   return L;
 }
@@ -80,15 +87,46 @@ function viewDetail(c, snap, p, W) {
   return L.map((l) => (vlen(l) > W ? pad(l, W) : l));
 }
 
-function viewLive(c, snap, W) {
-  const L = [c.gray(`${pad('PROYECTO', 20)} ${pad('AGENTE', 32)} ${pad('ESTADO', 12)} ${pad('TIEMPO', 7)} ÚLTIMA ACCIÓN`)];
-  let n = 0;
+export function liveRows(snap) {
+  const rows = [];
   for (const p of snap.projects) {
-    for (const r of p.runs.filter((x) => x.running)) { n++; L.push(`${pad(p.name, 20)} ${pad(c.cyan(`pi executor · ${r.task}`), 32)} ${pad(c.green('● corriendo'), 12)} ${pad(ago(snap.now - r.started), 7)} ${c.gray(pad(r.last, Math.max(10, W - 78)))}`); }
-    for (const a of p.panes) { n++; L.push(`${pad(p.name, 20)} ${pad(c.violet(`${a.agent} · ${a.title}`), 32)} ${pad(a.status === 'working' ? c.green('● trabaja') : c.gray(`○ ${a.status}`), 12)} ${pad('', 7)} ${c.gray(a.pane)}`); }
+    for (const r of p.runs.filter((x) => x.running)) rows.push({ kind: 'pi', project: p.name, root: p.root, task: r.task, started: r.started, last: r.last });
+    for (const a of p.panes) rows.push({ kind: 'pane', project: p.name, agent: a.agent, title: a.title, status: a.status, pane: a.pane });
   }
-  if (!n) L.push('', c.gray('  Ningún agente activo ahora mismo.'));
+  return rows;
+}
+
+function viewLive(c, snap, sel, W) {
+  const L = [c.gray(`  ${pad('PROYECTO', 20)} ${pad('AGENTE', 32)} ${pad('ESTADO', 12)} ${pad('TIEMPO', 7)} ÚLTIMA ACCIÓN`)];
+  const rows = liveRows(snap);
+  rows.forEach((r, i) => {
+    const mark = i === sel ? c.cyan('▸') : ' ';
+    const line = r.kind === 'pi'
+      ? `${pad(r.project, 20)} ${pad(c.cyan(`pi executor · ${r.task}`), 32)} ${pad(c.green('● corriendo'), 12)} ${pad(ago(snap.now - r.started), 7)} ${c.gray(pad(r.last, Math.max(10, W - 78)))}`
+      : `${pad(r.project, 20)} ${pad(c.violet(`${r.agent} · ${r.title}`), 32)} ${pad(r.status === 'working' ? c.green('● trabaja') : c.gray(`○ ${r.status}`), 12)} ${pad('', 7)} ${c.gray(r.pane)}`;
+    L.push(`${mark} ${line}`);
+  });
+  if (!rows.length) L.push('', c.gray('  Ningún agente activo ahora mismo.'));
+  else L.push('', c.gray('  Enter sobre un executor de pi abre su log completo.'));
   return L;
+}
+
+const ACTIVE = new Set(['proposed', 'approved', 'executing', 'gating', 'gated', 'reviewing', 'blocked']);
+const STATUS_COLOR = { blocked: 'red', executing: 'green', reviewing: 'blue', gating: 'blue', gated: 'blue', approved: 'cyan', proposed: 'yellow', done: 'gray', cancelled: 'gray' };
+
+export function taskRows(snap) {
+  const rows = snap.projects.flatMap((p) => (p.taskList || []).map((t) => ({ p, t, ts: Date.parse(t.history?.at(-1)?.ts || 0) || 0, cost: Number(p.metrics.tasks.find((m) => m.task === t.id)?.total_cost) || 0 })));
+  const act = rows.filter((r) => ACTIVE.has(r.t.status)).sort((a, b) => b.ts - a.ts);
+  const done = rows.filter((r) => !ACTIVE.has(r.t.status)).sort((a, b) => b.ts - a.ts);
+  return { act, done };
+}
+
+function viewTasks(c, snap, W) {
+  const { act, done } = taskRows(snap);
+  const row = (r) => `  ${pad(r.p.name, 19)} ${pad(r.t.id, 32)}  ${pad(c[STATUS_COLOR[r.t.status] || 'gray'](r.t.status), 10)} ${pad(`${r.t.attempts}`, 4)} ${pad(r.t.executor || '—', 7)} ${pad(ago(snap.now - r.ts), 6, true)} ${pad(r.cost ? money(r.cost) : '', 8, true)}`;
+  const L = [c.gray(`  ${pad('PROYECTO', 19)} ${pad('TAREA', 32)} ${pad('TIER', 4)} ${pad('ESTADO', 10)} ${pad('INT', 4)} ${pad('EXEC', 7)} ${pad('EDAD', 6, true)} ${pad('COSTO', 8, true)}`)];
+  L.push(c.bold(`  En curso o pendientes (${act.length})`), ...act.map(row), '', c.bold(`  Cerradas (${done.length}, las más recientes primero)`), ...done.map(row));
+  return L.map((l) => (vlen(l) > W ? pad(l, W) : l));
 }
 
 function viewMetrics(c, snap, scope, p, W) {
@@ -101,6 +139,14 @@ function viewMetrics(c, snap, scope, p, W) {
   for (const x of [...snap.projects].sort((a, b) => b.metrics.cost - a.metrics.cost)) {
     const bw = Math.min(34, W - 44); const cw = Math.round((x.metrics.claudeCost / max) * bw); const ew = Math.round((x.metrics.externalCost / max) * bw);
     L.push(`   ${pad(x.name, 22)} ${c.violet('█'.repeat(cw))}${c.blue('█'.repeat(ew))}${c.gray('░'.repeat(Math.max(0, bw - cw - ew)))} ${pad(money(x.metrics.cost), 8, true)}  ${c.gray(`Claude ${money(x.metrics.claudeCost)} · ext ${money(x.metrics.externalCost)}`)}`);
+  }
+  if (snap.byDay.length) {
+    const dmax = Math.max(1, ...snap.byDay.map((d) => d.claude + d.ext));
+    L.push('', `  ${c.bold('Costo por día')} ${c.gray('(cuando se cerró la tarea · violeta Claude, azul externo)')}`);
+    for (const d of snap.byDay) {
+      const bw = Math.min(40, W - 40); const cw = Math.round((d.claude / dmax) * bw); const ew = Math.round((d.ext / dmax) * bw);
+      L.push(`   ${c.gray(d.day.slice(5))}  ${c.violet('█'.repeat(cw))}${c.blue('█'.repeat(ew))} ${money(d.claude + d.ext)} ${c.gray(`· ${d.tasks} tarea(s)`)}`);
+    }
   }
   L.push('', `  ${c.bold('Executor: pi vs Codex')} ${c.gray('(promedio por tarea cerrada; necesita ~5 tareas por grupo)')}`);
   L.push(c.gray(`   ${pad('tier', 5)} ${pad('executor', 9)} ${pad('tareas', 7, true)} ${pad('1er int.', 9, true)} ${pad('exec/t', 7, true)} ${pad('exec min', 9, true)} ${pad('tok in', 8, true)} ${pad('costo/t', 9, true)}`));
@@ -117,21 +163,29 @@ export function renderFrame(snap, ui, { width = 100, height = 30, color = true }
   const c = style(color);
   const W = Math.max(60, width);
   const p = snap.projects[ui.sel];
-  let lines;
-  if (ui.detail) lines = viewDetail(c, snap, p, W);
+  const room = Math.max(5, height - 5);
+  let lines; let scroll = ui.scroll || 0;
+  if (ui.log) {
+    const all = runLog(ui.log.root, ui.log.task);
+    const top = ui.log.follow ? Math.max(0, all.length - (room - 2)) : Math.min(ui.log.top, Math.max(0, all.length - 1));
+    lines = [`${c.bold(ui.log.project)} · ${c.cyan(ui.log.task)}  ${c.gray(`log de pi · ${all.length} eventos · ${ui.log.follow ? 'siguiendo' : 'pausado'}`)}`, '', ...all.slice(top, top + room - 2).map((l) => pad(l, W - 2))];
+    scroll = 0;
+  } else if (ui.detail) lines = viewDetail(c, snap, p, W);
   else if (ui.tab === 0) lines = viewProjects(c, snap, ui.sel, W);
-  else if (ui.tab === 1) lines = viewLive(c, snap, W);
+  else if (ui.tab === 1) lines = viewLive(c, snap, ui.liveSel || 0, W);
+  else if (ui.tab === 2) lines = viewTasks(c, snap, W);
   else lines = viewMetrics(c, snap, ui.scope, p, W);
+  const view = lines.slice(scroll, scroll + room);
+  const hint = ui.log ? 'Esc volver · ↑↓ mover · G seguir el final' : ui.tab === 1 ? '↑↓ elegir · Enter ver log' : ui.tab >= 2 ? '↑↓ desplazar' : '↑↓ elegir · Enter detalle';
   const foot = ui.confirm
     ? c.yellow(` ${ui.confirm.text} (y/n) `)
-    : c.gray(` ${ui.msg ? `${ui.msg}  ·  ` : ''}1-3 vistas · ↑↓ elegir · Enter detalle · Esc atrás · s sync · c métricas · r refrescar · q salir`);
-  const room = Math.max(5, height - 5);
-  return [...header(c, snap, ui.tab, W), ...lines.slice(0, room), ...Array(Math.max(0, room - lines.length)).fill(''), c.gray('─'.repeat(W)), foot].join('\n');
+    : c.gray(` ${ui.msg ? `${ui.msg}  ·  ` : ''}1-4 vistas · ${hint} · s sync · c métricas · r refrescar · q salir`);
+  return [...header(c, snap, ui.tab, W), ...view, ...Array(Math.max(0, room - view.length)).fill(''), c.gray('─'.repeat(W)), foot].join('\n');
 }
 
 export function runTui({ script = join(dirname(fileURLToPath(import.meta.url)), '..', 'bin', 'harness.mjs'), intervalMs = 2500 } = {}) {
   const out = process.stdout;
-  const ui = { tab: 0, sel: 0, detail: false, scope: 'general', confirm: null, msg: '' };
+  const ui = { tab: 0, sel: 0, liveSel: 0, scroll: 0, log: null, detail: false, scope: 'general', confirm: null, msg: '' };
   let snap = fleetSnapshot();
   const draw = () => {
     ui.sel = Math.min(ui.sel, Math.max(0, snap.projects.length - 1));
@@ -156,10 +210,21 @@ export function runTui({ script = join(dirname(fileURLToPath(import.meta.url)), 
     const p = snap.projects[ui.sel];
     if (ui.confirm) { if (k === 'y') { const f = ui.confirm.run; ui.confirm = null; f(); } else { ui.confirm = null; ui.msg = 'cancelado'; } return draw(); }
     ui.msg = '';
+    const UP = k === '\x1b[A' || k === 'k'; const DOWN = k === '\x1b[B' || k === 'j';
+    if (ui.log) {
+      if (k === '\x1b' || k === 'b' || k === 'q') ui.log = null;
+      else if (UP) ui.log = { ...ui.log, follow: false, top: Math.max(0, (ui.log.follow ? Math.max(0, runLog(ui.log.root, ui.log.task).length - 20) : ui.log.top) - 3) };
+      else if (DOWN) ui.log = { ...ui.log, follow: false, top: ui.log.top + 3 };
+      else if (k === 'G') ui.log = { ...ui.log, follow: true };
+      return draw();
+    }
     if (k === 'q') return quit();
-    if (k === '1' || k === '2' || k === '3') { ui.tab = Number(k) - 1; ui.detail = false; }
-    else if (k === '\x1b[A' || k === 'k') ui.sel = Math.max(0, ui.sel - 1);
-    else if (k === '\x1b[B' || k === 'j') ui.sel = Math.min(snap.projects.length - 1, ui.sel + 1);
+    if (['1', '2', '3', '4'].includes(k)) { ui.tab = Number(k) - 1; ui.detail = false; ui.scroll = 0; }
+    else if (ui.tab === 1 && (UP || DOWN)) ui.liveSel = Math.max(0, Math.min(liveRows(snap).length - 1, ui.liveSel + (DOWN ? 1 : -1)));
+    else if (ui.tab >= 2 && (UP || DOWN)) ui.scroll = Math.max(0, ui.scroll + (DOWN ? 3 : -3));
+    else if (UP) ui.sel = Math.max(0, ui.sel - 1);
+    else if (DOWN) ui.sel = Math.min(snap.projects.length - 1, ui.sel + 1);
+    else if (k === '\r' && ui.tab === 1) { const r = liveRows(snap)[ui.liveSel]; if (r?.kind === 'pi') ui.log = { project: r.project, root: r.root, task: r.task, follow: true, top: 0 }; }
     else if (k === '\r' && ui.tab === 0) ui.detail = true;
     else if (k === '\x1b' || k === 'b') ui.detail = false;
     else if (k === 'p') ui.scope = ui.scope === 'general' ? 'proyecto' : 'general';

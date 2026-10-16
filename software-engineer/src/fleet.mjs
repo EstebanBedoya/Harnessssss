@@ -132,5 +132,54 @@ export function fleetSnapshot({ roots = fleetRoots(), now = Date.now(), panes = 
       tokensIn: projects.reduce((a, p) => a + p.metrics.tokensIn, 0), tokensOut: projects.reduce((a, p) => a + p.metrics.tokensOut, 0),
     },
     compare: compareExecutors(all),
+    attention: attention(projects, now),
+    byDay: costByDay(projects, 14, now),
   };
+}
+
+const H = 3600000;
+const lastTs = (t) => Date.parse(t.history?.at(-1)?.ts || 0) || 0;
+
+// Lo que espera algo de ti o parece atascado. Las propuestas se agrupan por proyecto: 16 planes viejos no deben tapar lo urgente.
+export function attention(projects, now = Date.now()) {
+  const out = [];
+  for (const p of projects) {
+    const proposed = [];
+    for (const t of p.taskList || []) {
+      const age = now - lastTs(t);
+      const base = { project: p.name, task: t.id, tier: t.tier, status: t.status, age };
+      const live = p.runs.some((r) => r.task === t.id && r.running);
+      if (t.status === 'blocked') out.push({ ...base, level: 'red', text: 'bloqueada: necesita tu decisión (reintentar o cancelar)' });
+      else if (t.status === 'proposed') proposed.push({ ...base });
+      else if (t.status === 'executing' && !live && age > 0.5 * H) out.push({ ...base, level: 'red', text: 'en ejecución sin corrida activa: ¿se cayó?' });
+      else if (['gating', 'gated', 'reviewing'].includes(t.status) && age > H) out.push({ ...base, level: 'yellow', text: t.status === 'reviewing' ? 'esperando la revisión del QA' : 'esperando el gate o el QA' });
+      else if (t.status === 'approved' && !live && age > 2 * H) out.push({ ...base, level: 'yellow', text: 'aprobada pero nadie la ha lanzado' });
+    }
+    if (proposed.length) out.push({ project: p.name, task: proposed.length === 1 ? proposed[0].task : `${proposed.length} tareas`, tier: '', status: 'proposed', age: Math.max(...proposed.map((x) => x.age)), level: 'yellow', text: proposed.length === 1 ? 'esperando tu aprobación' : 'propuestas esperando tu aprobación (la más vieja)' });
+    for (const i of p.issues || []) if (/desactualizado|sin gate/.test(i)) out.push({ project: p.name, task: '', tier: '', status: '', age: 0, level: 'yellow', text: i });
+  }
+  return out.sort((a, b) => (a.level === b.level ? b.age - a.age : a.level === 'red' ? -1 : 1));
+}
+
+// Costo por día (fecha en que se cerró la tarea): Claude y externo por separado.
+export function costByDay(projects, days = 14, now = Date.now()) {
+  const m = new Map();
+  for (const p of projects) for (const t of p.metrics.tasks) {
+    const d = String(t.ended || '').slice(0, 10);
+    if (!d) continue;
+    const r = m.get(d) || { day: d, claude: 0, ext: 0, tasks: 0 };
+    r.claude += num(t.claude_cost); r.ext += num(t.codex_cost); r.tasks += 1;
+    m.set(d, r);
+  }
+  const from = new Date(now - (days - 1) * 24 * H).toISOString().slice(0, 10);
+  return [...m.values()].filter((r) => r.day >= from).sort((a, b) => a.day.localeCompare(b.day));
+}
+
+// Log de una corrida de pi, ya legible (una línea por evento).
+export function runLog(root, task) {
+  const f = join(root, '.harness', 'logs', `${task}.jsonl`);
+  if (!existsSync(f)) return [];
+  const out = [];
+  for (const l of readFileSync(f, 'utf8').split('\n')) { try { const t = formatPiEvent(JSON.parse(l)); if (t) out.push(t); } catch { /* cortada */ } }
+  return out;
 }

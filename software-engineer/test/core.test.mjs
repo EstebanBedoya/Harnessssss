@@ -1301,12 +1301,56 @@ test('tui: formato y cuadro completo desde una foto, sin color en pruebas', () =
   assert.equal(ago(45000), '45s'); assert.equal(ago(10 * 60000), '10m');
   assert.equal(pad('abcdef', 4), 'abc…'); assert.equal(pad('ab', 4, true), '  ab');
   const proj = (name, extra = {}) => ({ root: `/x/${name}`, name, configured: true, issues: [], outdated: false, gate: 'make gate', executor: { provider: 'pi', model: 'openai/gpt-6.1-sol' }, designer: { provider: 'claude', model: 'm' }, agents: [], runs: [], panes: [], tasks: { done: 2, executing: 1 }, taskList: [], metrics: { tasks: [], count: 0, cost: 1.5, claudeCost: 1, externalCost: 0.5, tokensIn: 1000, tokensOut: 10 }, ...extra });
-  const snap = { now: 1000, projects: [proj('uno'), proj('dos', { outdated: true, issues: ['x'] })], totals: { projects: 2, running: 0, outdated: 1, tasks: 0, cost: 3, claudeCost: 2, externalCost: 1, tokensIn: 0, tokensOut: 0 }, compare: [] };
+  const snap = { now: 1000, projects: [proj('uno'), proj('dos', { outdated: true, issues: ['x'] })], totals: { projects: 2, running: 0, outdated: 1, tasks: 0, cost: 3, claudeCost: 2, externalCost: 1, tokensIn: 0, tokensOut: 0 }, compare: [], attention: [{ level: 'red', project: 'dos', task: 't9', text: 'bloqueada', age: 7200000 }], byDay: [{ day: '2026-10-16', claude: 2, ext: 1, tasks: 2 }] };
   const f0 = renderFrame(snap, { tab: 0, sel: 0 }, { color: false });
   assert.match(f0, /uno\s+○ al día\s+pi · gpt-6\.1-sol\s+make gate\s+2\/3/);
   assert.match(f0, /dos\s+⚠ desactualizado/);
   assert.match(f0, /2 proyectos · ○ nada corriendo · ⚠ 1 desactualizados/);
-  for (const ui of [{ tab: 1, sel: 0 }, { tab: 2, sel: 0, scope: 'proyecto' }, { tab: 0, sel: 1, detail: true }, { tab: 0, sel: 0, confirm: { text: '¿seguro?' } }]) assert.ok(renderFrame(snap, ui, { color: false }).length > 100);
+  for (const ui of [{ tab: 1, sel: 0 }, { tab: 2, sel: 0 }, { tab: 3, sel: 0, scope: 'proyecto' }, { tab: 0, sel: 1, detail: true }, { tab: 0, sel: 0, confirm: { text: '¿seguro?' } }]) assert.ok(renderFrame(snap, ui, { color: false }).length > 100);
   assert.match(renderFrame(snap, { tab: 0, sel: 0, confirm: { text: '¿seguro?' } }, { color: false }), /¿seguro\? \(y\/n\)/);
   assert.doesNotMatch(f0, /\x1b\[/); // sin color no hay códigos ANSI
+});
+
+import { attention, costByDay, runLog } from '../src/fleet.mjs';
+import { liveRows, taskRows } from '../src/tui.mjs';
+
+test('atención: bloqueadas y caídas son urgentes; las propuestas se agrupan por proyecto', () => {
+  const now = Date.parse('2026-10-16T12:00:00Z');
+  const task = (id, status, hoursAgo) => ({ id, tier: 'T1', status, history: [{ ts: new Date(now - hoursAgo * 3600000).toISOString() }] });
+  const proj = (name, taskList, runs = []) => ({ name, taskList, runs, issues: [] });
+  const a = attention([
+    proj('p1', [task('b', 'blocked', 5), task('e', 'executing', 2), task('live', 'executing', 2), task('r', 'reviewing', 3), task('ok', 'done', 99), task('n1', 'proposed', 30), task('n2', 'proposed', 10)], [{ task: 'live', running: true }]),
+    proj('p2', [task('solo', 'proposed', 1), task('fresh', 'executing', 0.1)]),
+  ], now);
+  const by = Object.fromEntries(a.map((x) => [`${x.project}/${x.task}`, x.level]));
+  assert.deepEqual(by, { 'p1/b': 'red', 'p1/e': 'red', 'p1/r': 'yellow', 'p1/2 tareas': 'yellow', 'p2/solo': 'yellow' });
+  assert.equal(a[0].level, 'red'); // las urgentes primero
+  assert.equal(a.find((x) => x.task === '2 tareas').age, 30 * 3600000); // la más vieja de las propuestas
+});
+
+test('consumo por día y log de una corrida', () => {
+  const now = Date.parse('2026-10-16T12:00:00Z');
+  const proj = { metrics: { tasks: [{ ended: '2026-10-16T01:00:00Z', claude_cost: '1.5', codex_cost: '0.5' }, { ended: '2026-10-16T09:00:00Z', claude_cost: '1', codex_cost: '0' }, { ended: '2026-09-01T00:00:00Z', claude_cost: '9', codex_cost: '9' }] } };
+  assert.deepEqual(costByDay([proj], 14, now), [{ day: '2026-10-16', claude: 2.5, ext: 0.5, tasks: 2 }]); // el de septiembre queda fuera
+  const root = tmp(); mkdirSync(join(root, '.harness/logs'), { recursive: true });
+  writeFileSync(join(root, '.harness/logs/x.jsonl'), '{"type":"tool_execution_start","toolName":"read","args":{"path":"a.go"}}\nbasura\n{"type":"agent_settled","aborted":false}\n');
+  assert.deepEqual(runLog(root, 'x'), ['🔧 read a.go', '■ terminó']);
+  assert.deepEqual(runLog(root, 'nada'), []);
+});
+
+test('tui: vistas de tareas y en vivo, y el visor de log', () => {
+  const t = (id, status, ts) => ({ id, tier: 'T1', status, attempts: 1, executor: 'pi', history: [{ ts }] });
+  const root = tmp(); mkdirSync(join(root, '.harness/logs'), { recursive: true });
+  writeFileSync(join(root, '.harness/logs/live1.jsonl'), '{"type":"tool_execution_start","toolName":"bash","args":{"command":"go build"}}\n');
+  const p = { root, name: 'p1', configured: true, issues: [], gate: 'g', executor: { provider: 'pi', model: 'm' }, designer: { provider: 'claude', model: 'm' }, agents: [], runs: [{ task: 'live1', running: true, started: 0, last: 'bash go build' }], panes: [{ agent: 'claude', status: 'working', title: 'planner', pane: 'w1:p1' }], tasks: {}, taskList: [t('viva', 'executing', '2026-10-16T10:00:00Z'), t('vieja', 'done', '2026-10-01T10:00:00Z')], metrics: { tasks: [], count: 0, cost: 0, claudeCost: 0, externalCost: 0, tokensIn: 0, tokensOut: 0 } };
+  const snap = { now: Date.parse('2026-10-16T12:00:00Z'), projects: [p], totals: { projects: 1, running: 1, outdated: 0, tasks: 0, cost: 0, claudeCost: 0, externalCost: 0, tokensIn: 0, tokensOut: 0 }, compare: [], attention: [], byDay: [] };
+  const rows = taskRows(snap);
+  assert.deepEqual([rows.act.map((r) => r.t.id), rows.done.map((r) => r.t.id)], [['viva'], ['vieja']]);
+  assert.deepEqual(liveRows(snap).map((r) => r.kind), ['pi', 'pane']);
+  const tasks = renderFrame(snap, { tab: 2, sel: 0 }, { color: false });
+  assert.match(tasks, /En curso o pendientes \(1\)[\s\S]*viva[\s\S]*Cerradas \(1/);
+  assert.match(renderFrame(snap, { tab: 1, sel: 0, liveSel: 0 }, { color: false }), /▸ .*pi executor · live1/);
+  const log = renderFrame(snap, { tab: 1, sel: 0, log: { project: 'p1', root, task: 'live1', follow: true, top: 0 } }, { color: false });
+  assert.match(log, /log de pi · 1 eventos · siguiendo/);
+  assert.match(log, /🔧 bash go build/);
 });
