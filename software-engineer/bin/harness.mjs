@@ -267,6 +267,11 @@ try {
         if (live) { try { const f = formatPiEvent(JSON.parse(l)); if (f) console.error(f); } catch { /* línea cortada */ } }
       };
       const run = await runPi({ bin, cwd: root, onLine, args: piArgs(rt, { promptFile, prompt: text }), timeoutMs: Number(flag.timeout || profile.pi?.timeoutMs?.[role] || 600000) });
+      if (watchPane) { // el pane de seguimiento no sobrevive a la corrida; una pausa deja que `watch` imprima el cierre
+        await new Promise((r) => setTimeout(r, 1000));
+        try { herdr.closePane(watchPane); } catch { /* ya lo cerraron */ }
+        rmSync(paneFile, { force: true });
+      }
       const res = parsePiJsonl(run.stdout);
       const failure = run.timedOut ? `pi superó el tiempo máximo (${Math.round((Date.now() - t0) / 1000)} s)` : res.error || (!res.text && run.code !== 0 ? `pi terminó con código ${run.code}: ${run.stderr.trim().slice(-300)}` : '');
       const answer = failure ? '' : res.text;
