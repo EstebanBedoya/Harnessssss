@@ -13,7 +13,7 @@ import { runWizard } from '../src/wizard.mjs';
 import { fleetSnapshot } from '../src/fleet.mjs';
 import { renderFrame, runTui } from '../src/tui.mjs';
 import { resolvePi, runPi } from '../src/pi.mjs';
-import { LAUNCHERS, formatRunEvent, isSettled, withRoleFile } from '../src/runners.mjs';
+import { LAUNCHERS, formatRunEvent, isSettled, modelsFor, withRoleFile } from '../src/runners.mjs';
 import * as herdr from '../src/herdr.mjs';
 import { assignSkills, buildAgentsMd, detect, installAgents, installRoleSkills, proposeProfile, recommend, recommendationsMd, writeAgentsMd, writeRolePrompt } from '../src/init.mjs';
 import { collect, collectCodex, collectRollup, piRunsAsSessions, ensureSchema, transcriptDir, writeGate, writeRun } from '../src/metrics.mjs';
@@ -67,9 +67,8 @@ async function configure({ offerInstall = false } = {}) {
       }
       env = detectEnvironment(profile);
     }
-    const bin = resolvePi(profile);
     const r = await runWizard({
-      profile, env, piModels: bin ? listPiModels(bin) : [], yes: !rl, main: flag.main || null,
+      profile, env, listModels: (runner) => modelsFor(profile, runner), yes: !rl, main: flag.main || null,
       ask: async (q, def) => (await rl.question(`${q}${def ? ` [${def}]` : ''}: `)) || def,
       say: (m) => console.error(m),
     });

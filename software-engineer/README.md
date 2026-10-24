@@ -53,7 +53,7 @@ Quién decide qué:
 
 ## Requisitos
 - node ≥ 20 y pnpm (`brew install pnpm`)
-- Al menos un runner de IA: Claude Code, [pi](https://pi.dev), Codex u OpenCode. Con la configuración de fábrica hacen falta Claude Code (planner, reviewer, designer) y pi (executor).
+- Al menos un runner de IA: Claude Code, [pi](https://pi.dev), Codex, OpenCode o Antigravity (`agy`). Con la configuración de fábrica hacen falta Claude Code (planner, reviewer, designer) y pi (executor).
 - [Herdr](https://herdr.dev) (`brew install herdr`), recomendado: abre un pane que sigue en vivo lo que hace pi. Sin él, `exec` imprime el progreso por stderr.
 - pi (Node ≥ 22.19; `npm i -g --ignore-scripts @earendil-works/pi-coding-agent`) para lanzar el executor o el reviewer en headless. Cada proveedor de IA se conecta con `/login` dentro de pi (suscripción o API key); `pi --list-models` muestra los que ya tienes. Sus MCP (engram, codebase-memory) se declaran en `~/.pi/agent/mcp.json`.
 - pi no tiene sandbox ni aprobaciones: el aislamiento es el scope del plan, las reglas del prompt y el gate.
@@ -91,7 +91,7 @@ En una terminal, `init --apply` además:
 Para repetirlo o cambiarlo después: `harness config`.
 
 ### Runners y modelos
-Cada rol tiene un **runner** (`claude`, `pi`, `codex`, `opencode`) y un **modelo**. Con pi el modelo se escribe `proveedor/id` (el de `pi --list-models`), y así un mismo runner sirve para varios proveedores. Ejemplo:
+Cada rol tiene un **runner** (`claude`, `pi`, `codex`, `opencode`, `antigravity`) y un **modelo**. Con pi el modelo se escribe `proveedor/id` (el de `pi --list-models`), y así un mismo runner sirve para varios proveedores. Ejemplo:
 
 | Rol | Runner | Modelo |
 |---|---|---|
@@ -111,11 +111,13 @@ harness config set main pi --global                     # runner principal: el d
 
 **Quien revisa no es quien escribió:** el reviewer no puede ser de la misma familia de modelo que el executor (openai, google, anthropic…). Se compara la familia del modelo, no el runner: pi con Codex y pi con Gemini sí son distintos. Si coinciden, el planner se detiene y avisa.
 
-**Qué lanza `harness exec`:** `pi`, `codex` (`codex exec`) y `opencode` (`opencode run`), como `executor` o `reviewer` (`harness exec <id> --role reviewer`). `claude` corre como subagente que lanza el planner. Ningún runner tiene sandbox: escriben código directamente en el repo, y el aislamiento es el scope del plan, las reglas del prompt y el gate.
+**Qué lanza `harness exec`:** `pi`, `codex` (`codex exec`), `opencode` (`opencode run`) y `antigravity` (`agy --print`), como `executor` o `reviewer` (`harness exec <id> --role reviewer`). `claude` corre como subagente que lanza el planner. Ningún runner tiene sandbox: escriben código directamente en el repo, y el aislamiento es el scope del plan, las reglas del prompt y el gate.
 - **codex:** el executor corre con `-s danger-full-access` (`codex.execSandbox`; el sandbox de Codex bloquea `.git` y no podría commitear). El reviewer corre con `workspace-write` (`codex.reviewSandbox`): ejecuta el gate pero no puede commitear. Por tier: `codex.byTier.T2.sandbox`.
 - **opencode:** corre con `--auto` (aprueba permisos). El esfuerzo no se pasa, porque `--variant` depende del proveedor. El modelo se valida contra `opencode models`.
-- **codex y opencode** no tienen bandera de system prompt: el prompt de la tarea les pide leer `.harness/prompts/<rol>.md` primero. El costo de Codex sale de la tarifa del modelo en `PRICES`; si no la tiene queda en 0 y el informe lo avisa.
-- Binarios: `PI_BIN`, `CODEX_BIN`, `OPENCODE_BIN` o `pi.bin` / `codex.bin` / `opencode.bin` en el perfil.
+- **antigravity** (`agy`, `brew install --cask antigravity-cli`, abre `agy` una vez para iniciar sesión): usa tu cuenta Google y ofrece Gemini, Claude y GPT-OSS (`agy models`). Corre con `--dangerously-skip-permissions`. Si el id del modelo ya trae el esfuerzo (`gemini-3.8-flash-high`) no se pasa `--effort`. Es la vía para Gemini con suscripción; en pi, Gemini requiere `GEMINI_API_KEY`.
+- **codex, opencode y antigravity** no tienen bandera de system prompt: el prompt de la tarea les pide leer `.harness/prompts/<rol>.md` primero. El costo de Codex sale de la tarifa del modelo en `PRICES`; si no la tiene queda en 0 y el informe lo avisa.
+- Binarios: `PI_BIN`, `CODEX_BIN`, `OPENCODE_BIN`, `AGY_BIN` o `pi.bin` / `codex.bin` / `opencode.bin` / `antigravity.bin` en el perfil.
+- El asistente (`harness config`) muestra los modelos de cada runner: los pide a `pi --list-models`, `opencode models` y `agy models`; para claude y codex sugiere los conocidos.
 
 ### 2. Trabajar una tarea
 En Claude Code, en el proyecto:
@@ -158,7 +160,7 @@ src/classify.mjs     categoría + tier            src/tasks.mjs    máquina de e
 src/router.mjs       modelo/esfuerzo por rol     src/gate.mjs     gate + scope manifest
 src/pi.mjs           pi (headless)               src/metrics.mjs  métricas TOON
 src/config.mjs       runners, familias, capas    src/wizard.mjs   asistente de config
-src/runners.mjs      lanzadores pi/codex/opencode
+src/runners.mjs      lanzadores pi/codex/opencode/antigravity
 src/init.mjs         detección del proyecto      src/defaults.mjs perfil y precios por defecto
 agents/*.md          prompts de cada rol         skill/SKILL.md   comando /harness
 test/                node --test

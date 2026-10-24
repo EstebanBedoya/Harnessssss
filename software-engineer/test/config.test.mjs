@@ -293,3 +293,67 @@ test('exec: un runner sin lanzador (claude) se explica en vez de fallar mudo', (
   assert.notEqual(r.status, 0);
   assert.match(r.stderr, /subagente de Claude/);
 });
+
+// ---------- antigravity (eventos reales de `agy --print --output-format stream-json`) ----------
+import { agyArgs, modelsFor, parseAgyJsonl } from '../src/runners.mjs';
+
+const AGY_OUT = [
+  { event: 'init', conversation_id: 'c-1', init: { cwd: '/x', tools: ['run_command'], permission_mode: 'always-proceed' } },
+  { event: 'step_update', step_update: { conversation_id: 'c-1', step_index: 0, state: 'DONE', step_type: 'user_input' } },
+  { event: 'step_update', step_update: { conversation_id: 'c-1', step_index: 1, state: 'ACTIVE', step_type: 'agent_response', text_delta: 'DONE ok' } },
+  { event: 'result', result: { conversation_id: 'c-1', status: 'SUCCESS', response: 'DONE ok\n', num_turns: 1, usage: { input_tokens: 14555, output_tokens: 187, thinking_tokens: 185, cache_read_tokens: 100, total_tokens: 14742 } } },
+].map((e) => JSON.stringify(e)).join('\n');
+
+test('antigravity: argumentos (sin --effort si el id de Gemini ya lo trae) y lectura del resultado', () => {
+  assert.deepEqual(agyArgs({ model: 'gemini-3.8-flash-high', effort: 'high' }, { prompt: 'P' }), ['--print', 'P', '--output-format', 'stream-json', '--dangerously-skip-permissions', '--model', 'gemini-3.8-flash-high']);
+  assert.deepEqual(agyArgs({ model: 'claude-opus-4-6-thinking', effort: 'xhigh' }, { prompt: 'P' }).slice(-2), ['--effort', 'xhigh']);
+  assert.deepEqual(agyArgs({ model: null, effort: null }, { prompt: 'P' }), ['--print', 'P', '--output-format', 'stream-json', '--dangerously-skip-permissions']);
+  const r = parseAgyJsonl(AGY_OUT, { model: 'gemini-3.8-flash-high' });
+  assert.deepEqual([r.session, r.text, r.error, r.turns, r.in, r.cached, r.out], ['c-1', 'DONE ok', '', 1, 14655, 100, 372]);
+  const bad = parseAgyJsonl(JSON.stringify({ event: 'result', result: { status: 'ERROR', response: '' } }));
+  assert.equal(bad.error, 'ERROR');
+  assert.equal(parseAgyJsonl(AGY_OUT.split('\n').slice(0, 3).join('\n')).text, 'DONE ok'); // sin result: lo que llegó por deltas
+  assert.equal(familyOf('antigravity', 'gemini-3.8-flash-high'), 'google');
+});
+
+test('antigravity: eventos en vivo y fin de la corrida', () => {
+  assert.equal(formatRunEvent({ event: 'result', result: { status: 'SUCCESS' } }), '■ terminó');
+  assert.equal(formatRunEvent({ event: 'step_update', step_update: { state: 'DONE', step_type: 'run_command' } }), '🔧 run_command');
+  assert.equal(formatRunEvent({ event: 'step_update', step_update: { state: 'DONE', step_type: 'user_input' } }), null);
+  assert.deepEqual([{ event: 'result' }, { event: 'init' }].map(isSettled), [true, false]);
+});
+
+test('modelos por runner: claude y codex sugieren los conocidos; un binario ausente da lista vacía', () => {
+  assert.ok(modelsFor({}, 'claude').some((m) => m.model === 'claude-opus-5-5'));
+  assert.ok(modelsFor({}, 'codex').length > 0);
+  assert.deepEqual(modelsFor({ antigravity: { bin: '/no/existe' } }, 'antigravity'), []);
+});
+
+test('asistente: muestra los modelos del runner elegido y avisa si el modelo no está en la lista', async () => {
+  const profile = withModels({});
+  const env = { herdr: true, runners: { claude: true, pi: false, codex: false, opencode: false, antigravity: true }, install: {} };
+  const answers = ['', 'n', '', '', '', '', 'antigravity', 'gemini-9']; // main, ¿más roles?, planner (2), executor (2), reviewer: runner y modelo
+  const said = [];
+  const r = await runWizard({
+    profile, env, listModels: (runner) => (runner === 'antigravity' ? [{ model: 'gemini-3.8-flash-high' }, { model: 'claude-sonnet-4-6' }] : []),
+    ask: async (q, def) => answers.shift() || def, say: (m) => said.push(m),
+  });
+  assert.equal(r.patches['models.reviewer.provider'], 'antigravity');
+  assert.match(said.join('\n'), /modelos de antigravity: gemini-3\.8-flash-high, claude-sonnet-4-6/);
+  assert.match(said.join('\n'), /antigravity no lista "gemini-9"/);
+});
+
+test('exec: el reviewer corre en antigravity con Gemini y su VERDICT cierra la tarea', () => {
+  const root = repo({ executor: { provider: 'codex', model: 'gpt-5.3-codex' }, reviewer: { provider: 'antigravity', model: 'gemini-3.8-flash-high' } });
+  const P = loadProfile(root);
+  addTask(root, P, { id: 'a1', title: 'x', category: 'feature', paths: ['src/**'] });
+  applyEvent(root, P, 'a1', 'approve');
+  applyEvent(root, P, 'a1', 'exec_started', { provider: 'codex', model: 'gpt-5.3-codex' });
+  applyEvent(root, P, 'a1', 'exec_done'); applyEvent(root, P, 'a1', 'gate_pass');
+  const bin = fakeBin(root, 'agy', AGY_OUT.replace('DONE ok\\n', 'VERDICT approved').replace('"DONE ok"', '"VERDICT approved"'));
+  const r = spawnSync('node', [BIN, 'exec', 'a1', '--role', 'reviewer', '--quiet', '--root', root], { encoding: 'utf8', env: { ...process.env, AGY_BIN: bin, HERDR_ENV: '' } });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.equal(JSON.parse(r.stdout).verdict, 'approved');
+  assert.equal(loadBacklog(root).tasks.a1.status, 'done');
+  assert.match(readFileSync(join(root, 'agy.args'), 'utf8'), /^--print\n/);
+});

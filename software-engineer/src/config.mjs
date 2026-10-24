@@ -15,6 +15,7 @@ export const RUNNERS = {
   claude: { bin: 'claude', exec: false, note: 'subagente de Claude Code (lo lanza el planner)' },
   pi: { bin: 'pi', exec: true, note: 'headless con `harness exec`; admite varios proveedores (/login en pi)', install: 'npm i -g --ignore-scripts @earendil-works/pi-coding-agent' },
   codex: { bin: 'codex', exec: true, note: '`codex exec` headless con `harness exec`', install: 'instala Codex CLI' },
+  antigravity: { bin: 'agy', exec: true, note: '`agy --print` headless con `harness exec` (Gemini, Claude y GPT-OSS con tu cuenta Google)', install: 'brew install --cask antigravity-cli' },
   opencode: { bin: 'opencode', exec: true, note: '`opencode run` headless con `harness exec`', install: 'instala opencode' },
 };
 export const ROLES = ['planner', 'executor', 'reviewer', 'designer', 'explore'];

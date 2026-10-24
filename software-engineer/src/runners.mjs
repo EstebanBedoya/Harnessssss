@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { listPiModels } from './config.mjs';
 import { costOf } from './metrics.mjs';
 import { formatPiEvent, parsePiJsonl, piArgs, piHasModels, resolvePi } from './pi.mjs';
 
@@ -89,6 +90,44 @@ export function listOpencodeModels(bin) {
   return r.status === 0 ? r.stdout.split('\n').map((l) => l.trim()).filter((l) => l.includes('/')) : [];
 }
 
+// ---------- antigravity: `agy --print --output-format stream-json` ----------
+
+// `--dangerously-skip-permissions`: en headless nadie puede aprobar permisos (sin sandbox, como pi). Los ids de Gemini ya traen el
+// esfuerzo (`gemini-3.8-flash-high`): en ese caso no se pasa --effort.
+export function agyArgs(rt, { prompt }) {
+  const a = ['--print', prompt, '--output-format', 'stream-json', '--dangerously-skip-permissions'];
+  if (rt.model) a.push('--model', rt.model);
+  if (rt.effort && !/-(low|medium|high)$/.test(rt.model || '')) a.push('--effort', rt.effort);
+  return a;
+}
+
+// Eventos: init (conversation_id), step_update (agent_response con text_delta; usage al terminar), result (status, response, usage).
+// SUPUESTO: input_tokens no incluye cache_read_tokens (se suman para la entrada total, como en Codex y opencode).
+export function parseAgyJsonl(text, { model = '' } = {}) {
+  const r = emptyRun(); r.model = model; let streamed = '';
+  eachEvent(text, (ev) => {
+    if (ev.event === 'init') r.session = ev.conversation_id || r.session;
+    else if (ev.event === 'step_update' && ev.step_update?.step_type === 'agent_response') streamed += ev.step_update.text_delta || '';
+    else if (ev.event === 'result') {
+      const x = ev.result || {}; const u = x.usage || {};
+      r.session = x.conversation_id || r.session;
+      r.text = String(x.response || '').trim();
+      r.turns = x.num_turns || 1; r.cached = u.cache_read_tokens || 0; r.in = (u.input_tokens || 0) + r.cached; r.out = (u.output_tokens || 0) + (u.thinking_tokens || 0);
+      r.error = x.status && x.status !== 'SUCCESS' ? `${x.status}${x.error ? `: ${typeof x.error === 'string' ? x.error : x.error.message || ''}` : ''}` : '';
+    }
+  });
+  if (!r.text && !r.error) r.text = streamed.trim(); // sin evento result: lo que llegó por deltas
+  const usd = model ? costOf(model, { input_tokens: Math.max(0, r.in - r.cached), output_tokens: r.out, cache_read_input_tokens: r.cached }) : null;
+  r.cost = usd == null ? 0 : Number(usd.toFixed(6));
+  return r;
+}
+
+// `agy models`: "id<TAB>nombre" por línea.
+export function listAgyModels(bin) {
+  const r = spawnSync(bin, ['models'], { encoding: 'utf8', timeout: 30000 });
+  return r.status === 0 ? r.stdout.split('\n').map((l) => l.split('\t')[0].trim()).filter((id) => /^[\w.:-]+$/.test(id) && !/^fetching$/i.test(id)) : [];
+}
+
 // ---------- registro ----------
 
 // Para cada runner con lanzador: cómo encontrarlo, cómo armar la corrida y cómo leerla.
@@ -124,7 +163,33 @@ export const LAUNCHERS = {
     args: (rt, { prompt }) => opencodeArgs(rt, { prompt }),
     parse: (stdout, rt) => parseOpencodeJsonl(stdout, { model: rt.model || '' }),
   },
+  antigravity: {
+    resolve: (profile) => resolveBin('agy', { fixed: profile.antigravity?.bin, envVar: 'AGY_BIN' }),
+    install: 'brew install --cask antigravity-cli (y abre `agy` una vez para iniciar sesión) o fija antigravity.bin / AGY_BIN',
+    ready: (bin, rt) => {
+      if (!rt.model) return null;
+      const known = listAgyModels(bin);
+      return !known.length || known.includes(rt.model) ? null : `antigravity no conoce el modelo ${rt.model} (mira \`agy models\`)`;
+    },
+    args: (rt, { prompt }) => agyArgs(rt, { prompt }),
+    parse: (stdout, rt) => parseAgyJsonl(stdout, { model: rt.model || '' }),
+  },
 };
+
+// Modelos que cada runner ofrece, para el asistente. Los dinámicos se piden al binario; claude y codex no tienen lista: se sugieren los conocidos.
+const CLAUDE_MODELS = ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5'];
+const CODEX_MODELS = ['gpt-5.3-codex', 'gpt-5.5', 'gpt-6.1-sol'];
+export function modelsFor(profile, runner) {
+  const bin = LAUNCHERS[runner]?.resolve(profile);
+  const plain = (ids) => ids.map((id) => ({ model: id }));
+  if (runner === 'claude') return plain(CLAUDE_MODELS);
+  if (runner === 'codex') return plain(CODEX_MODELS);
+  if (!bin) return [];
+  if (runner === 'pi') return listPiModels(bin);
+  if (runner === 'opencode') return plain(listOpencodeModels(bin));
+  if (runner === 'antigravity') return plain(listAgyModels(bin));
+  return [];
+}
 
 // El prompt de rol viaja por archivo para pi; para los demás se le pide al agente que lo lea primero.
 export const withRoleFile = (runner, prompt, promptRel) => (runner === 'pi' ? prompt : `Your role instructions are in ${promptRel}: read that file first and follow it exactly.\n${prompt}`);
@@ -134,6 +199,13 @@ export const withRoleFile = (runner, prompt, promptRel) => (runner === 'pi' ? pr
 export function formatRunEvent(ev) {
   const pi = formatPiEvent(ev);
   if (pi) return pi;
+  if (ev?.event) { // antigravity: el tipo va en `event`
+    const su = ev.step_update || {};
+    if (ev.event === 'init') return `▶ sesión ${ev.conversation_id}`;
+    if (ev.event === 'step_update' && su.state === 'DONE' && !['user_input', 'agent_response'].includes(su.step_type)) return `🔧 ${su.step_type}`;
+    if (ev.event === 'result') return ev.result?.status === 'SUCCESS' ? '■ terminó' : `✗ ${ev.result?.status}`;
+    return null;
+  }
   switch (ev?.type) {
     case 'thread.started': return `▶ sesión ${ev.thread_id}`;
     case 'item.started': return ev.item?.type === 'command_execution' ? `🔧 bash ${short(ev.item.command)}` : null;
@@ -159,5 +231,5 @@ export function formatRunEvent(ev) {
 }
 
 // ¿Esta corrida ya terminó? pi: agent_settled; codex: turn.completed | turn.failed; opencode: step_finish con razón `stop`.
-export const isSettled = (ev) => ev?.type === 'agent_settled' || ev?.type === 'turn.completed' || ev?.type === 'turn.failed'
+export const isSettled = (ev) => ev?.event === 'result' || ev?.type === 'agent_settled' || ev?.type === 'turn.completed' || ev?.type === 'turn.failed'
   || (ev?.type === 'step_finish' && ev.part?.reason === 'stop') || (ev?.type === 'error' && !!ev.error);

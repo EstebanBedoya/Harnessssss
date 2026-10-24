@@ -34,6 +34,7 @@ export const DEFAULT_PROFILE = {
   // `sandbox` y `approval` son legado. `bin` fija el ejecutable.
   codex: { sandbox: 'workspace-write', approval: 'never', byTier: {}, execSandbox: 'danger-full-access', reviewSandbox: 'workspace-write', bin: null },
   opencode: { bin: null, timeoutMs: { executor: 600000 } }, // `opencode run --auto`: sin sandbox, como pi
+  antigravity: { bin: null, timeoutMs: { executor: 600000 } }, // `agy --print --dangerously-skip-permissions`: sin sandbox, como pi
   // Reparto: Claude solo para el planner, el QA (reviewer, Sonnet 5.5) y el designer (Claude Design); lo demás corre en pi.
   // model: null deja que pi use el modelo de su config (`/login`, `pi --list-models`); se fija con `harness config set models.executor.model <proveedor/id>`.
   // El executor NO cae a Claude si pi falla: el planner se detiene y avisa (un fallback manual se registra con el evento `fallback`).
