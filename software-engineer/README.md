@@ -77,7 +77,7 @@ harness upgrade                 # git pull --ff-only + install.sh (dependencias 
 harness upgrade --sync          # igual, y además refresca los agentes de los proyectos desactualizados
 harness fleet [--sync]          # solo la revisión de proyectos (agentes frente a las plantillas actuales)
 ```
-`upgrade` se detiene sin tocar nada si el clon tiene cambios sin commitear o divergió del remoto. Los proyectos se buscan en `~/Projects`, `~/Lab` y `~/Servers` (cámbialo en `~/.harness/fleet.json`). Quien tenga una versión anterior a `upgrade` debe hacer `git pull` una vez en el clon.
+La salida es texto legible; con `--json` imprime el objeto (para scripts). `upgrade` se detiene sin tocar nada si el clon tiene cambios sin commitear o divergió del remoto. Los proyectos se buscan en `~/Projects`, `~/Lab` y `~/Servers` (cámbialo en `~/.harness/fleet.json`). Quien tenga una versión anterior a `upgrade` debe hacer `git pull` una vez en el clon.
 
 ## Guía de uso
 

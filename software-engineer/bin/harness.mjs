@@ -10,7 +10,7 @@ import { changedFiles, checkScope, headSha, newCommits, runGate, snapshotDirty }
 import { judgeRun, parseVerdict } from '../src/verdict.mjs';
 import { MAIN_ROLES, ROLES, RUNNERS, checkProfile, detectEnvironment, globalConfigFile, listPiModels, rolePatch } from '../src/config.mjs';
 import { runWizard } from '../src/wizard.mjs';
-import { fleetStale, upgrade, versionInfo } from '../src/upgrade.mjs';
+import { fleetStale, formatFleet, formatUpgrade, formatVersion, upgrade, versionInfo } from '../src/upgrade.mjs';
 import { fleetSnapshot } from '../src/fleet.mjs';
 import { renderFrame, runTui } from '../src/tui.mjs';
 import { resolvePi, runPi } from '../src/pi.mjs';
@@ -42,6 +42,7 @@ for (let i = 0; i < argv.length; i++) {
 }
 const root = resolve(flag.root || cwd());
 const out = (o) => console.log(JSON.stringify(o, null, 2));
+const show = (o, fmt) => (flag.json ? out(o) : console.log(fmt(o))); // texto legible; --json imprime el objeto
 const fail = (m, code = 1) => { console.error(`error: ${m}`); process.exit(code); };
 const list = (v) => (v ? String(v).split(',').map((s) => s.trim()).filter(Boolean) : undefined);
 const [cmd, sub, ...rest] = pos;
@@ -423,7 +424,7 @@ try {
       break;
     }
     case 'version': {
-      out(versionInfo(CORE));
+      show(versionInfo(CORE), formatVersion);
       break;
     }
     case 'upgrade': {
@@ -435,7 +436,7 @@ try {
         try { r.projects = JSON.parse(f.stdout); } catch { r.projects = { error: (f.stderr || f.stdout).trim().slice(0, 300) }; }
         r.next = r.projects.outdated && !flag.sync ? 'harness upgrade --sync (o `harness agents sync` en cada proyecto)' : undefined;
       }
-      out(r);
+      show(r, formatUpgrade);
       if (r.error) process.exitCode = 1;
       break;
     }
@@ -445,7 +446,7 @@ try {
         const x = spawnSync(process.execPath, [join(CORE, 'bin', 'harness.mjs'), 'agents', 'sync', '--root', p], { encoding: 'utf8' });
         return x.status === 0 ? 'ok' : `error: ${(x.stderr || x.stdout).trim().split('\n')[0]}`;
       } : null;
-      out(fleetStale({ sync }));
+      show(fleetStale({ sync }), formatFleet);
       break;
     }
     case 'doctor': {
@@ -481,9 +482,9 @@ try {
   config                                     asistente: runner principal, runner y modelo por rol (global o proyecto)
   config show | get <clave> | set <clave> <valor> [--global] | role <rol> <runner> [modelo] [--global]
   metrics collect | report [tarea] | compare | show [tabla] métricas completas en TOON y un informe legible, sin gastar tokens
-  version                                    versión, commit y carpeta desde la que está instalado
-  upgrade [--check] [--sync]                 trae los cambios del repo (git pull --ff-only), reinstala y lista los proyectos desactualizados; --sync los refresca
-  fleet [--sync]                             proyectos con harness y sus agentes desactualizados
+  version [--json]                           versión, commit y carpeta desde la que está instalado
+  upgrade [--check] [--sync] [--json]        trae los cambios del repo (git pull --ff-only), reinstala y lista los proyectos desactualizados; --sync los refresca
+  fleet [--sync] [--json]                    proyectos con harness y sus agentes desactualizados
   doctor
   --root DIR (por defecto: directorio actual)`);
   }

@@ -80,3 +80,49 @@ export function fleetStale({ roots = fleetRoots(), sync = null } = {}) {
   });
   return { projects, outdated: projects.filter((p) => p.stale?.length).length };
 }
+
+// ---------- salida legible (con --json se imprime el objeto tal cual) ----------
+
+const sha = (v) => (v?.commit ? `${v.commit}${v.branch ? ` (${v.branch})` : ''}` : 'sin git');
+
+export const formatVersion = (v) => [
+  `harness ${v.version ?? '?'}${v.git ? ` · ${v.commit} en ${v.branch}, ${v.date}` : ' · sin git'}`,
+  `  instalado desde: ${v.core}`,
+  ...(v.remote ? [`  remoto: ${v.remote}`] : []),
+].join('\n');
+
+export function formatFleet(f) {
+  if (!f.projects.length) return 'No encontré proyectos con harness en las carpetas revisadas (~/Projects, ~/Lab, ~/Servers o ~/.harness/fleet.json).';
+  const L = [`${f.projects.length} proyecto(s) con harness, ${f.outdated} desactualizado(s)`];
+  for (const p of f.projects) {
+    if (p.error) L.push(`  ✗ ${p.name}: ${p.error}`);
+    else if (!p.stale.length) L.push(`  ✓ ${p.name}`);
+    else L.push(`  ● ${p.name}: agentes desactualizados (${p.stale.join(', ')})${p.sync ? ` → sync: ${p.sync}` : ''}`);
+  }
+  if (f.outdated && !f.projects.some((p) => p.sync)) L.push('', 'Refrescarlos: harness fleet --sync');
+  return L.join('\n');
+}
+
+export function formatUpgrade(r) {
+  const L = [];
+  const commits = (r.commits || []).map((c) => `  · ${c}`);
+  if (r.error) {
+    L.push(`✗ ${r.error}`);
+    if (commits.length) L.push(`${r.behind} commit(s) nuevos sin traer:`, ...commits);
+  } else if (r.upToDate) {
+    L.push(`✓ Ya estás al día: ${sha(r.before)}`);
+    if (r.note) L.push(`  ${r.note}`);
+  } else if (r.available) {
+    L.push(`● Hay ${r.behind} commit(s) nuevos en ${r.upstream}:`, ...commits);
+    if (r.depsChanged) L.push('  cambian las dependencias: se reinstalarán');
+    if (r.agentsChanged) L.push('  cambian los agentes: conviene refrescar los proyectos');
+    L.push('', 'Actualizar: harness upgrade');
+  } else if (r.updated) {
+    L.push(`✓ Actualizado: ${r.before.commit} → ${r.after.commit} (${r.behind} commit(s))`, ...commits);
+    L.push(r.install?.ok ? '  instalación: ok (dependencias y enlaces)' : `  ✗ instalación falló: ${r.install?.error || r.install?.note || 'ver install.sh'}`);
+    if (r.projects?.error) L.push(`  ✗ no pude revisar los proyectos: ${r.projects.error}`);
+    else if (r.projects) L.push('', formatFleet(r.projects));
+    if (r.next) L.push('', `Siguiente: ${r.next}`);
+  }
+  return L.join('\n');
+}

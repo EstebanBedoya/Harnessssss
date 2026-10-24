@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
-import { checkUpgrade, fleetStale, upgrade, versionInfo } from '../src/upgrade.mjs';
+import { checkUpgrade, fleetStale, formatFleet, formatUpgrade, formatVersion, upgrade, versionInfo } from '../src/upgrade.mjs';
 
 process.env.HARNESS_CONFIG = join(tmpdir(), `harness-test-no-global-${process.pid}.json`);
 
@@ -86,4 +86,24 @@ test('fleet: lista los proyectos con agentes desactualizados y --sync los refres
   const calls = [];
   fleetStale({ roots: [home], sync: (root) => { calls.push(root); return 'ok'; } });
   assert.deepEqual(calls, [p]);
+});
+
+test('salida legible: al día, hay novedades, actualizado, error y proyectos', () => {
+  const { core, dev, install } = setup();
+  assert.match(formatVersion(versionInfo(core)), /^harness 0\.1\.0 · [0-9a-f]+ en main/);
+  assert.match(formatUpgrade(upgrade(core)), /^✓ Ya estás al día: [0-9a-f]+ \(main\)$/);
+  pushChange(dev, { 'software-engineer/agents/executor.md': 'v2' }, 'feat: mejora');
+  const check = formatUpgrade(upgrade(core, { check: true }));
+  assert.match(check, /● Hay 1 commit\(s\) nuevos en origin\/main:\n {2}· [0-9a-f]+ feat: mejora/);
+  assert.match(check, /conviene refrescar los proyectos/);
+  assert.match(check, /Actualizar: harness upgrade$/);
+  write(install, 'software-engineer/agents/executor.md', 'editado');
+  assert.match(formatUpgrade(upgrade(core)), /^✗ el clon tiene cambios sin commitear/);
+  G(install, 'checkout', '--', '.');
+  const done = formatUpgrade({ ...upgrade(core, { install: () => ({ ok: true }) }), projects: { projects: [{ name: 'a', stale: ['planner'] }, { name: 'b', stale: [] }], outdated: 1 }, next: 'harness upgrade --sync' });
+  assert.match(done, /^✓ Actualizado: [0-9a-f]+ → [0-9a-f]+ \(1 commit\(s\)\)/);
+  assert.match(done, /instalación: ok/);
+  assert.match(done, /● a: agentes desactualizados \(planner\)\n {2}✓ b|✓ b/);
+  assert.match(formatFleet({ projects: [{ name: 'a', stale: ['x'], sync: 'ok' }], outdated: 1 }), /→ sync: ok/);
+  assert.match(formatFleet({ projects: [], outdated: 0 }), /No encontré proyectos/);
 });
