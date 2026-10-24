@@ -30,8 +30,10 @@ export const DEFAULT_PROFILE = {
   // byTier: { T2: { sandbox: 'danger-full-access' } } para fijar el sandbox o la aprobación por tier
   // pi (pi.dev) es el proveedor externo: sin sandbox ni aprobaciones. `bin` fija el ejecutable; timeoutMs es la espera por rol.
   pi: { bin: null, timeoutMs: { executor: 600000 } },
-  // Legado: solo lo leen el puente de Pixel y las métricas históricas de Codex.
-  codex: { sandbox: 'workspace-write', approval: 'never', byTier: {} },
+  // codex (`codex exec`): el executor corre con `execSandbox` (o byTier[tier].sandbox) porque `workspace-write` bloquea .git y no podría commitear; el reviewer con `reviewSandbox`.
+  // `sandbox` y `approval` son legado. `bin` fija el ejecutable.
+  codex: { sandbox: 'workspace-write', approval: 'never', byTier: {}, execSandbox: 'danger-full-access', reviewSandbox: 'workspace-write', bin: null },
+  opencode: { bin: null, timeoutMs: { executor: 600000 } }, // `opencode run --auto`: sin sandbox, como pi
   // Reparto: Claude solo para el planner, el QA (reviewer, Sonnet 5.5) y el designer (Claude Design); lo demás corre en pi.
   // model: null deja que pi use el modelo de su config (`/login`, `pi --list-models`); se fija con `harness config set models.executor.model <proveedor/id>`.
   // El executor NO cae a Claude si pi falla: el planner se detiene y avisa (un fallback manual se registra con el evento `fallback`).

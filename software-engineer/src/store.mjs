@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DEFAULT_PROFILE } from './defaults.mjs';
+import { applyMain, globalConfigFile, readJsonFile } from './config.mjs';
 
 export const dirs = (root) => ({
   base: join(root, '.harness'),
@@ -19,10 +20,22 @@ const merge = (a, b) => {
   return b;
 };
 
+// Capas: DEFAULT_PROFILE < global (~/.config/harness/config.json) < proyecto. `main` reasigna los roles que nadie fijó.
 export function loadProfile(root) {
   const f = dirs(root).profile;
   const user = existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : {};
-  return merge(DEFAULT_PROFILE, user);
+  const global = readJsonFile(globalConfigFile());
+  const explicit = merge(global, user);
+  return applyMain(merge(DEFAULT_PROFILE, explicit), explicit);
+}
+
+// De qué capa sale cada valor de una clave: para `harness config show`.
+export function layersOf(root, dotted) {
+  const get = (o) => dotted.split('.').reduce((x, k) => (x == null ? undefined : x[k]), o);
+  const f = dirs(root).profile;
+  const user = existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : {};
+  const global = readJsonFile(globalConfigFile());
+  return get(user) !== undefined ? 'proyecto' : get(global) !== undefined ? 'global' : 'defecto';
 }
 
 export function writeJson(file, data) {
@@ -39,8 +52,8 @@ export const loadBacklog = (root) => {
 export const saveBacklog = (root, b) => writeJson(dirs(root).backlog, b);
 
 // Cambia una clave del perfil del usuario (`models.designer.use`) sin volcar los valores por defecto al archivo.
-export function setProfileValue(root, dotted, value) {
-  const f = dirs(root).profile;
+export function setProfileValue(root, dotted, value, { global = false } = {}) {
+  const f = global ? globalConfigFile() : dirs(root).profile;
   const user = existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : {};
   const keys = dotted.split('.');
   let cur = user;

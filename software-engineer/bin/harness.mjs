@@ -1,15 +1,19 @@
 #!/usr/bin/env node
+import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { cwd } from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { CATEGORIES } from '../src/defaults.mjs';
 import { classify } from '../src/classify.mjs';
 import { changedFiles, checkScope, headSha, newCommits, runGate, snapshotDirty } from '../src/gate.mjs';
-import { judgeRun } from '../src/verdict.mjs';
+import { judgeRun, parseVerdict } from '../src/verdict.mjs';
+import { MAIN_ROLES, ROLES, RUNNERS, checkProfile, detectEnvironment, globalConfigFile, listPiModels, rolePatch } from '../src/config.mjs';
+import { runWizard } from '../src/wizard.mjs';
 import { fleetSnapshot } from '../src/fleet.mjs';
 import { renderFrame, runTui } from '../src/tui.mjs';
-import { formatPiEvent, parsePiJsonl, piArgs, piHasModels, resolvePi, runPi } from '../src/pi.mjs';
+import { resolvePi, runPi } from '../src/pi.mjs';
+import { LAUNCHERS, formatRunEvent, isSettled, withRoleFile } from '../src/runners.mjs';
 import * as herdr from '../src/herdr.mjs';
 import { assignSkills, buildAgentsMd, detect, installAgents, installRoleSkills, proposeProfile, recommend, recommendationsMd, writeAgentsMd, writeRolePrompt } from '../src/init.mjs';
 import { collect, collectCodex, collectRollup, piRunsAsSessions, ensureSchema, transcriptDir, writeGate, writeRun } from '../src/metrics.mjs';
@@ -19,7 +23,7 @@ import { compareExecutors, compareMd } from '../src/rollup.mjs';
 import { detectLegacy, diffText, reportMd, sdd } from '../src/migrate.mjs';
 import { backlogInfo, bridgePidFile, clearBridgePid, ensureBridge, tick } from '../src/pixel.mjs';
 import { route } from '../src/router.mjs';
-import { dirs, getProfileValue, loadBacklog, loadProfile, setProfileValue, writeJson } from '../src/store.mjs';
+import { dirs, getProfileValue, layersOf, loadBacklog, loadProfile, setProfileValue, writeJson } from '../src/store.mjs';
 import { addTask, applyEvent, nextStep, setTaskPaths } from '../src/tasks.mjs';
 import { readRows } from '../src/toonfile.mjs';
 import { exploreReuse, reuseCheck } from '../src/reuse.mjs';
@@ -47,6 +51,35 @@ const need = (id) => {
   return t;
 };
 
+// Asistente de runners/modelos, compartido por `harness config` y `harness init --apply`. Devuelve lo guardado.
+async function configure({ offerInstall = false } = {}) {
+  const profile = loadProfile(root);
+  let env = detectEnvironment(profile);
+  const interactive = !flag.yes && process.stdin.isTTY;
+  const rl = interactive ? (await import('node:readline/promises')).createInterface({ input: process.stdin, output: process.stdout }) : null;
+  try {
+    if (rl && offerInstall) {
+      for (const [what, cmdline] of Object.entries(env.install)) {
+        if ((await rl.question(`${what} no está instalado. ¿Instalarlo con \`${cmdline}\`? (s/N) [n]: `)).trim().toLowerCase().startsWith('s')) {
+          const r = spawnSync(cmdline, { shell: true, stdio: 'inherit' });
+          console.error(r.status === 0 ? `ok      ${what} instalado` : `error   no pude instalar ${what} (código ${r.status}); instálalo a mano y vuelve a correr \`harness config\``);
+        }
+      }
+      env = detectEnvironment(profile);
+    }
+    const bin = resolvePi(profile);
+    const r = await runWizard({
+      profile, env, piModels: bin ? listPiModels(bin) : [], yes: !rl, main: flag.main || null,
+      ask: async (q, def) => (await rl.question(`${q}${def ? ` [${def}]` : ''}: `)) || def,
+      say: (m) => console.error(m),
+    });
+    let global = !!flag.global;
+    if (rl && Object.keys(r.patches).length) global = (await rl.question('¿Dónde guardo? (g = global, para todos tus proyectos; p = solo este proyecto) [p]: ')).trim().toLowerCase().startsWith('g');
+    for (const [k, v] of Object.entries(r.patches)) setProfileValue(root, k, v, { global });
+    return { saved: Object.keys(r.patches), scope: global ? 'global' : 'proyecto', interactive: !!rl, warnings: checkProfile(loadProfile(root), env) };
+  } finally { rl?.close(); }
+}
+
 try {
   switch (cmd) {
     case 'init': {
@@ -69,11 +102,11 @@ try {
       const d = dirs(root);
       if (!flag.apply) {
         out({
-          mode: 'dry-run (usa --apply para escribir)', project: name, ...p, recommend: rec,
+          mode: 'dry-run (usa --apply para escribir)', project: name, ...p, recommend: rec, environment: detectEnvironment(p.profile),
           agentSkills: Object.fromEntries(Object.entries(p.profile.agents).map(([r, v]) => [r, v.skills])), skillsUnassigned: asg.unassigned,
           legacy: { items: legacy.items.map(({ headings, locked, ...i }) => i), conventions: legacy.conventions },
           sdd: safeSdd(true),
-          would_write: ['.harness/profile.json', '.harness/backlog.json', '.harness/migration.md', '.harness/recommendations.md', 'AGENTS.md (o .harness/AGENTS.proposed.md si ya existe una guía)', '.claude/agents/*.md (5 agentes con un bloque del proyecto; lo editado a mano no se pisa)', `Engram: copia sdd/* → harness/* (--sdd ${scope})`],
+          would_write: ['.harness/profile.json', '.harness/backlog.json', '.harness/migration.md', '.harness/recommendations.md', 'AGENTS.md (o .harness/AGENTS.proposed.md si ya existe una guía)', '.claude/agents/*.md (5 agentes con un bloque del proyecto; lo editado a mano no se pisa)', 'asistente de runners y modelos (solo en una terminal; `--yes` lo omite; después: `harness config`)', `Engram: copia sdd/* → harness/* (--sdd ${scope})`],
         });
         break;
       }
@@ -85,12 +118,13 @@ try {
       const commands = installRoleSkills(root, p.profile);
       const recFile = join(d.base, 'recommendations.md');
       writeFileSync(recFile, recommendationsMd(name, p.profile, rec, det));
+      const setup = flag.yes || !process.stdin.isTTY ? { skipped: 'sin terminal o con --yes: reparto recomendado; cámbialo con `harness config`' } : await configure({ offerInstall: true });
       const sddResult = safeSdd(false);
       const guide = legacy.items.find((i) => i.kind === 'guide');
       const agentsDiff = agentsMd.proposal && guide ? diffText(join(root, guide.path), agentsMd.proposal) : '';
       const report = join(d.base, 'migration.md');
       writeFileSync(report, reportMd(name, legacy, sddResult, { agentsDiff }));
-      out({ project: name, written: [d.profile, d.backlog, report, recFile], agentsMd, agents, commands, agentSkills: Object.fromEntries(Object.entries(p.profile.agents).map(([r, v]) => [r, v.skills])), sdd: sddResult, legacyFound: legacy.items.length, recommend: rec, notes: p.notes, committed: false });
+      out({ project: name, written: [d.profile, d.backlog, report, recFile], setup, agentsMd, agents, commands, agentSkills: Object.fromEntries(Object.entries(p.profile.agents).map(([r, v]) => [r, v.skills])), sdd: sddResult, legacyFound: legacy.items.length, recommend: rec, notes: p.notes, committed: false });
       break;
     }
     case 'agents': {
@@ -219,34 +253,44 @@ try {
       break;
     }
     case 'exec': {
-      // Lanza al executor en pi (headless, JSONL). El designer y el reviewer son subagentes de Claude; la exploración es `harness explore`. El prompt lleva referencias, no contenido (7.13).
+      // Lanza en headless (JSONL) al executor o al reviewer cuando su runner es pi, codex u opencode. El designer es un subagente de Claude; la exploración es `harness explore`. El prompt lleva referencias, no contenido (7.13).
       const role = flag.role || 'executor';
       if (role === 'explore') fail('explore ya no se lanza por exec: cualquier agente lo llama como comando local, `harness explore "<pregunta>"`');
-      if (role !== 'executor') fail(`exec solo lanza al executor en pi (recibí ${role}); el designer y el reviewer son subagentes de Claude`);
+      if (!['executor', 'reviewer'].includes(role)) fail(`exec lanza al executor o al reviewer (recibí ${role}); el designer es un subagente de Claude`);
       const profile = loadProfile(root);
       const t = need(sub);
       const step = nextStep(profile, t, { available: list(flag.available) });
       if (step.action !== 'run' || step.role !== role) fail(`el siguiente paso no es ${role}: ${JSON.stringify(step)}`);
       const rt = step.route; const refs = step.refs;
-      if (rt.provider !== 'pi') fail(`este comando solo lanza pi; la ruta eligió ${rt.provider}`);
-      const bin = resolvePi(profile);
-      if (!bin) fail('no encuentro pi. Instálalo (npm i -g --ignore-scripts @earendil-works/pi-coding-agent, Node ≥ 22.19) o fija pi.bin / PI_BIN; no gasté ningún intento.');
-      if (!piHasModels(bin)) fail('pi no tiene modelos: ejecuta `pi`, haz /login con tu suscripción o API key y vuelve a lanzar; no gasté ningún intento.');
-      const replyRel = `.harness/replies/${t.id}.txt`;
+      const launcher = LAUNCHERS[rt.provider];
+      if (!launcher) fail(`\`exec\` lanza ${Object.keys(LAUNCHERS).join(', ')}; la ruta de ${role} eligió ${rt.provider}${rt.provider === 'claude' ? ' (corre como subagente de Claude: lo lanza el planner)' : ''}`);
+      const bin = launcher.resolve(profile);
+      if (!bin) fail(`no encuentro ${rt.provider}: ${launcher.install}; no gasté ningún intento.`);
+      const notReady = launcher.ready(bin, rt);
+      if (notReady) fail(`${notReady}; no gasté ningún intento.`);
+      if (rt.provider === 'pi' && rt.model && !listPiModels(bin).some((m) => m.model === rt.model)) fail(`pi no conoce el modelo ${rt.model} (¿falta /login de ese proveedor?). Mira \`pi --list-models\` o cámbialo con \`harness config\`; no gasté ningún intento.`);
+      const replyRel = `.harness/replies/${t.id}${role === 'executor' ? '' : `.${role}`}.txt`;
       mkdirSync(join(root, '.harness', 'replies'), { recursive: true });
       rmSync(join(root, replyRel), { force: true }); // una respuesta vieja no cuenta como evidencia de esta corrida
       const promptFile = writeRolePrompt(root, role, profile);
-      const t2note = t.tier === 'T2' ? 'TIER T2: database commands only against the LOCAL test database, never against any other DATABASE_URL. Never run prisma migrate reset, db push, or anything with --force. Do not read or modify prisma/*.sql snapshot or backup files, or any .env file. Make migrations reversible or explain why not in your reply.' : '';
-      const text = [
+      const t2note = t.tier === 'T2' && role === 'executor' ? 'TIER T2: database commands only against the LOCAL test database, never against any other DATABASE_URL. Never run prisma migrate reset, db push, or anything with --force. Do not read or modify prisma/*.sql snapshot or backup files, or any .env file. Make migrations reversible or explain why not in your reply.' : '';
+      const text = (role === 'reviewer' ? [
+        `You are the reviewer for task ${t.id} (${t.category}, tier ${t.tier}): ${t.title}`,
+        `Branch: ${t.branch}. Allowed paths: ${t.paths.join(', ') || '(any)'}. Review the diff of the branch against its base.`,
+        `Plan and context: Engram keys ${refs.plan} and ${refs.design} (read them with the engram MCP; skip if missing).`,
+        flag.instruction ? `Instruction: ${flag.instruction}` : '',
+        'Read-only: do not edit files, do not commit, push or merge.', 'Reply with ONE line: VERDICT approved  or  VERDICT rejected: <up to 3 concrete reasons>.',
+      ] : [
         `You are the ${role} for task ${t.id} (${t.category}, tier ${t.tier}): ${t.title}`,
         `Branch: ${t.branch}. Allowed paths: ${t.paths.join(', ') || '(any)'}. Do not touch anything else.`,
         `Plan and context: Engram keys ${refs.plan} and ${refs.design} (read them with the engram MCP; skip if missing).`,
         flag.instruction ? `Instruction: ${flag.instruction}` : '', t2note,
         'Do not push, merge or mark the task done.', 'Reply with ONE line: DONE <summary> or FAILED <reason>.',
-      ].filter(Boolean).join('\n');
+      ]).filter(Boolean).join('\n');
       const t0 = Date.now();
       const headBefore = headSha(root);
-      applyEvent(root, profile, t.id, 'exec_started', { provider: 'pi' });
+      if (role === 'executor') applyEvent(root, profile, t.id, 'exec_started', { provider: rt.provider, model: rt.model });
+      else if (t.status === 'gated') applyEvent(root, profile, t.id, 'review_started');
       // Log en vivo: `tail -f` o `harness watch <id>` desde otra terminal; `--live` lo imprime aquí mismo (stderr, el stdout sigue siendo el JSON final).
       const logFile = join(root, '.harness', 'logs', `${t.id}.jsonl`);
       mkdirSync(dirname(logFile), { recursive: true });
@@ -264,24 +308,33 @@ try {
       const live = !flag.quiet && !watchPane;
       const onLine = (l) => {
         appendFileSync(logFile, `${l}\n`);
-        if (live) { try { const f = formatPiEvent(JSON.parse(l)); if (f) console.error(f); } catch { /* línea cortada */ } }
+        if (live) { try { const f = formatRunEvent(JSON.parse(l)); if (f) console.error(f); } catch { /* línea cortada */ } }
       };
-      const run = await runPi({ bin, cwd: root, onLine, args: piArgs(rt, { promptFile, prompt: text }), timeoutMs: Number(flag.timeout || profile.pi?.timeoutMs?.[role] || 600000) });
+      const promptRel = relative(root, promptFile);
+      const run = await runPi({ bin, cwd: root, onLine, args: launcher.args(rt, { promptFile, prompt: withRoleFile(rt.provider, text, promptRel), profile, tier: t.tier, role }), timeoutMs: Number(flag.timeout || profile[rt.provider]?.timeoutMs?.[role] || profile.pi?.timeoutMs?.[role] || 600000) });
       if (watchPane) { // el pane de seguimiento no sobrevive a la corrida; una pausa deja que `watch` imprima el cierre
         await new Promise((r) => setTimeout(r, 1000));
         try { herdr.closePane(watchPane); } catch { /* ya lo cerraron */ }
         rmSync(paneFile, { force: true });
       }
-      const res = parsePiJsonl(run.stdout);
-      const failure = run.timedOut ? `pi superó el tiempo máximo (${Math.round((Date.now() - t0) / 1000)} s)` : res.error || (!res.text && run.code !== 0 ? `pi terminó con código ${run.code}: ${run.stderr.trim().slice(-300)}` : '');
+      const res = launcher.parse(run.stdout, rt);
+      const failure = run.timedOut ? `${rt.provider} superó el tiempo máximo (${Math.round((Date.now() - t0) / 1000)} s)` : res.error || (!res.text && run.code !== 0 ? `${rt.provider} terminó con código ${run.code}: ${run.stderr.trim().slice(-300)}` : '');
       const answer = failure ? '' : res.text;
       const commits = newCommits(root, headBefore);
-      const verdict = failure ? { ok: false, reason: failure } : judgeRun({ role, reply: answer, commits, screen: run.stderr });
+      let verdict = failure ? { ok: false, reason: failure } : judgeRun({ role, reply: answer, commits, screen: run.stderr });
+      // El reviewer no escribe código: sin una línea VERDICT no hay veredicto y la tarea sigue en `reviewing` (se puede volver a lanzar).
+      let review = null;
+      if (role === 'reviewer' && verdict.ok) {
+        review = parseVerdict(answer);
+        if (!review) verdict = { ok: false, reason: 'el reviewer no devolvió una línea VERDICT approved|rejected' };
+        else if (commits > 0) verdict = { ok: false, reason: `el reviewer dejó ${commits} commit(s): es de solo lectura; revisa la rama antes de aceptar su veredicto` };
+      }
       writeFileSync(join(root, replyRel), `${answer || (failure ? `FAILED ${failure}` : '')}\n`);
-      applyEvent(root, profile, t.id, verdict.ok ? 'exec_done' : 'exec_failed');
+      if (role === 'executor') applyEvent(root, profile, t.id, verdict.ok ? 'exec_done' : 'exec_failed');
+      else if (verdict.ok && review) applyEvent(root, profile, t.id, review.approved ? 'verdict_approved' : 'verdict_rejected');
       if (!verdict.ok) process.exitCode = 2;
-      writeRun(dirs(root).metrics, { task: t.id, role, provider: 'pi', model: res.model || rt.model || '', effort: rt.effort || '', ts: new Date(t0).toISOString(), ms: Date.now() - t0, state: verdict.ok ? 'done' : 'failed', attempt: t.attempts, session: res.session, turns: res.turns, in: res.in, cached: res.cached, out: res.out, cost: res.cost, evidence: verdict.ok ? 'yes' : 'no' });
-      out({ ok: verdict.ok, role, ...(watchPane ? { watchPane } : {}), ...(!verdict.ok ? { error: `pi (${role}): ${verdict.reason}. Intento fallido (harness next dice cómo seguir)` } : {}), route: rt, model: res.model, tokens: { in: res.in, cached: res.cached, out: res.out }, cost: res.cost, reply: (answer || verdict.reason || '(sin respuesta)').slice(0, 600) });
+      writeRun(dirs(root).metrics, { task: t.id, role, provider: rt.provider, model: res.model || rt.model || '', effort: rt.effort || '', ts: new Date(t0).toISOString(), ms: Date.now() - t0, state: verdict.ok ? 'done' : 'failed', attempt: t.attempts, session: res.session, turns: res.turns, in: res.in, cached: res.cached, out: res.out, cost: res.cost, evidence: verdict.ok ? 'yes' : 'no' });
+      out({ ok: verdict.ok, role, ...(review ? { verdict: review.approved ? 'approved' : 'rejected', reason: review.reason } : {}), ...(watchPane ? { watchPane } : {}), ...(!verdict.ok ? { error: `${rt.provider} (${role}): ${verdict.reason}. Intento fallido (harness next dice cómo seguir)`, ...(launcher.hint && role === 'executor' ? { hint: launcher.hint } : {}) } : {}), route: rt, model: res.model, tokens: { in: res.in, cached: res.cached, out: res.out }, cost: res.cost, reply: (answer || verdict.reason || '(sin respuesta)').slice(0, 600) });
       break;
     }
     case 'tui': {
@@ -301,20 +354,50 @@ try {
         const data = readFileSync(file); if (data.length < pos) pos = 0; // el log se reinició: otra corrida
         buf += data.subarray(pos).toString('utf8'); pos = data.length;
         const lines = buf.split('\n'); buf = lines.pop();
-        for (const l of lines) { try { const ev = JSON.parse(l); const f = formatPiEvent(ev); if (f) console.log(f); if (ev.type === 'agent_settled') done = true; } catch { /* cortada */ } }
+        for (const l of lines) { try { const ev = JSON.parse(l); const f = formatRunEvent(ev); if (f) console.log(f); if (isSettled(ev)) done = true; } catch { /* cortada */ } }
       };
       while (!done) { pump(); if (!done) await new Promise((r) => setTimeout(r, 400)); }
       break;
     }
     case 'config': {
-      // Cambia o lee una clave del perfil: harness config get models.executor | set models.executor.model <proveedor/id>
+      // config                      asistente interactivo (runner principal, runner y modelo por rol)
+      // config show                 la configuración efectiva y de qué capa sale cada valor
+      // config get <clave> | set <clave> <valor> [--global] | role <rol> <runner> [modelo] [--global]
+      const asGlobal = !!flag.global;
       const profile = loadProfile(root);
+      const env = detectEnvironment(profile);
+      const applyPatches = (patches) => {
+        for (const [k, v] of Object.entries(patches)) setProfileValue(root, k, v, { global: asGlobal });
+        return Object.keys(patches);
+      };
+      const summary = (p) => ({
+        main: p.main ?? null,
+        roles: Object.fromEntries(Object.keys(p.models).map((r) => [r, { runner: p.models[r].provider, model: p.models[r].model, effort: p.models[r].effort, from: layersOf(root, `models.${r}.provider`) === 'defecto' && p.main && MAIN_ROLES.includes(r) ? 'main' : layersOf(root, `models.${r}.provider`) }])),
+        warnings: checkProfile(p, env),
+        files: { global: globalConfigFile(), project: dirs(root).profile },
+      });
+      if (sub === 'show') { out(summary(profile)); break; }
       if (sub === 'get') { out(getProfileValue(profile, rest[0] || '') ?? null); break; }
-      if (sub !== 'set' || !rest[0] || rest[1] === undefined) fail('uso: config get <clave> | config set <clave> <valor>');
-      let value = rest[1];
-      try { value = JSON.parse(rest[1]); } catch { /* texto plano */ }
-      setProfileValue(root, rest[0], value);
-      out({ set: rest[0], value, note: rest[0].startsWith('models.') ? 'el cambio aplica en el siguiente `harness next`' : undefined });
+      if (sub === 'role') {
+        const [role, runner, model] = rest;
+        if (!role || !runner) fail('uso: config role <rol> <runner> [proveedor/id] [--global]');
+        if (!ROLES.includes(role)) fail(`rol desconocido: ${role} (válidos: ${ROLES.join(', ')})`);
+        if (!RUNNERS[runner]) fail(`runner desconocido: ${runner} (válidos: ${Object.keys(RUNNERS).join(', ')})`);
+        const keys = applyPatches(rolePatch(role, { runner, model: model ?? null }));
+        out({ set: keys, scope: asGlobal ? 'global' : 'proyecto', ...summary(loadProfile(root)) });
+        break;
+      }
+      if (sub === 'set') {
+        if (!rest[0] || rest[1] === undefined) fail('uso: config set <clave> <valor> [--global]');
+        let value = rest[1];
+        try { value = JSON.parse(rest[1]); } catch { /* texto plano */ }
+        setProfileValue(root, rest[0], value, { global: asGlobal });
+        out({ set: rest[0], value, scope: asGlobal ? 'global' : 'proyecto', note: rest[0].startsWith('models.') || rest[0] === 'main' ? 'el cambio aplica en el siguiente `harness next`' : undefined, warnings: checkProfile(loadProfile(root), env) });
+        break;
+      }
+      if (sub) fail('uso: config [show | get <clave> | set <clave> <valor> | role <rol> <runner> [modelo]] [--global]');
+      if (!process.stdin.isTTY && !flag.yes) fail('el asistente necesita una terminal; usa `config role`, `config set` o `--yes`');
+      out({ ...(await configure({ offerInstall: true })), ...summary(loadProfile(root)) });
       break;
     }
     case 'metrics': {
@@ -339,15 +422,16 @@ try {
       break;
     }
     case 'doctor': {
-      const { spawnSync } = await import('node:child_process');
-      const has = (b) => spawnSync('which', [b]).status === 0;
       const profile = loadProfile(root);
+      const env = detectEnvironment(profile);
       out({
-        herdr: { bin: has('herdr'), inside: herdr.inHerdr() },
-        pi: resolvePi(profile) || false, claude: has('claude'),
+        herdr: { bin: env.herdr, inside: herdr.inHerdr() },
+        runners: { ...env.runners, pi: resolvePi(profile) || false },
         profile: existsSync(dirs(root).profile),
         gate: profile.gate.cmd || null,
-        note: 'pi: la suscripción se conecta con /login dentro de pi; `pi mcp list` muestra los MCP (engram, codebase-memory)',
+        config: { main: profile.main ?? null, global: globalConfigFile(), warnings: checkProfile(profile, env) },
+        install: env.install,
+        note: 'pi: la suscripción se conecta con /login dentro de pi; `pi mcp list` muestra los MCP (engram, codebase-memory). Cambiar runners y modelos: `harness config`',
       });
       break;
     }
@@ -355,7 +439,7 @@ try {
       console.log(`harness <comando>
   pixel bridge [--once] [--all]              (legado) muestra en Pixel Agents a los agentes de Codex
   agents sync [--reassign] [--force] regenera el bloque de proyecto de cada agente y las recomendaciones
-  init [--apply] [--force]            detecta el proyecto y propone .harness/profile.json
+  init [--apply] [--force] [--yes]    detecta el proyecto y propone .harness/profile.json; con --apply abre el asistente de runners/modelos
   categories | classify <cat> --paths a,b
   task add <id> --title T --category C [--paths a,b] | approve <id> | paths <id> --add a,b --remove c | redesign <id> | event <id> <evento> | list
   next <id> [--available claude,pi]   siguiente paso (lo consulta el planner)
@@ -364,10 +448,11 @@ try {
   explore "<qué vas a escribir>" [--deep] [--fresh] [--json]   ¿ya existe algo reutilizable? (grafo; --deep: Haiku decide)
   explore --reindex                           indexa el grafo en modo full (hace falta una vez por repo)
   reuse-check [id] [--base ref] [--strict]    ¿lo escrito en el diff duplica código existente? (--strict: código 1 si hay duplicado)
-  exec <id> [--instruction T] [--timeout ms] [--quiet]   lanza al executor en pi (headless); lo muestra en vivo (pane de Herdr o stderr)
+  exec <id> [--role executor|reviewer] [--instruction T] [--timeout ms] [--quiet]   lanza ese rol en su runner (pi, codex u opencode; headless); lo muestra en vivo (pane de Herdr o stderr)
   tui [--once]                               panel de todos los proyectos: configuración, desactualizados, agentes en vivo y métricas
   watch <id>                                 sigue en vivo la última corrida de esa tarea (desde otra terminal)
-  config get <clave> | set <clave> <valor>   p. ej. models.executor.model <proveedor/id>
+  config                                     asistente: runner principal, runner y modelo por rol (global o proyecto)
+  config show | get <clave> | set <clave> <valor> [--global] | role <rol> <runner> [modelo] [--global]
   metrics collect | report [tarea] | compare | show [tabla] métricas completas en TOON y un informe legible, sin gastar tokens
   doctor
   --root DIR (por defecto: directorio actual)`);

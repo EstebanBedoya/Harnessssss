@@ -40,11 +40,11 @@ function transition(profile, t, event, data = {}, probe = false) {
       if (t.attempts < profile.retries) t.attempts += 1; else t.status = 'blocked';
       break;
     case 'approved:exec_started':
-    case 'executing:exec_started': t.status = 'executing'; t.executor = data.provider || t.executor; break;
+    case 'executing:exec_started': t.status = 'executing'; t.executor = data.provider || t.executor; t.executorModel = data.model ?? t.executorModel ?? null; break;
     case 'executing:exec_done': t.status = 'gating'; break;
     // Fallback legítimo a otro proveedor: queda registrado quién ejecutó, y de ahí sale que el reviewer sea de la otra familia.
     case 'executing:fallback':
-    case 'gating:fallback': t.executor = data.provider; t.status = 'executing'; break;
+    case 'gating:fallback': t.executor = data.provider; t.executorModel = data.model ?? null; t.status = 'executing'; break;
     case 'executing:exec_failed': retry(); break; // el executor terminó sin dejar nada: cuenta como intento fallido
     case 'gating:gate_pass': t.gate = 'pass'; t.status = 'gated'; break;
     case 'gating:gate_fail': t.gate = 'fail'; retry(); break;
@@ -76,7 +76,7 @@ export function applyEvent(root, profile, id, event, data) {
 // Dice cuál es el siguiente paso. El planner lanza al agente; esto no es un LLM.
 export function nextStep(profile, t, opts = {}) {
   const k = keys(t.id);
-  const r = (role) => route(profile, role, { tier: t.tier, attempt: t.attempts, executorProvider: t.executor, ...opts });
+  const r = (role) => route(profile, role, { tier: t.tier, attempt: t.attempts, executorProvider: t.executor, executorModel: t.executorModel ?? null, ...opts });
   // events: qué registrar al lanzar y al terminar (`harness task event <id> <evento>`). Lo aplica el planner o `harness exec`.
   const EVENTS = {
     executor: { start: 'exec_started', done: 'exec_done' },

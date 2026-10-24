@@ -15,6 +15,9 @@ import { readRows } from '../src/toonfile.mjs';
 import { proposeProfile } from '../src/init.mjs';
 import { chmodSync, unlinkSync } from 'node:fs';
 
+// La config global del usuario no debe colarse en las pruebas.
+process.env.HARNESS_CONFIG = join(tmpdir(), `harness-test-no-global-${process.pid}.json`);
+
 const P = { ...DEFAULT_PROFILE, tiers: { t2: ['migrations/**', 'src/**/auth/**'], t1: [], ui: ['src/components/**'] }, gate: { cmd: 'true' } };
 const tmp = () => mkdtempSync(join(tmpdir(), 'harness-'));
 

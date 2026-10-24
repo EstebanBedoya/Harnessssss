@@ -16,3 +16,9 @@ export function judgeRun({ role, reply, changed, commits = 0, screen = '' }) {
   if (role === 'designer' && changed) return { ok: true, reason: 'cambios sin línea de respuesta' };
   return { ok: false, reason: 'terminó sin responder ni dejar commits' };
 }
+
+// Veredicto del reviewer: `VERDICT approved` o `VERDICT rejected: <motivos>`. Cualquier otra cosa no es un veredicto (null).
+export function parseVerdict(reply) {
+  const m = String(reply || '').match(/^\s*VERDICT\s+(approved|rejected)\b[:\s-]*(.*)$/im);
+  return m ? { approved: m[1].toLowerCase() === 'approved', reason: m[2].trim().slice(0, 240) } : null;
+}

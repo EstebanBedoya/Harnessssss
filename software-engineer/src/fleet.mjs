@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
 import { CORE_AGENTS_DIR, renderAgent } from './init.mjs';
-import { formatPiEvent } from './pi.mjs';
+import { formatRunEvent, isSettled } from './runners.mjs';
 import { compareExecutors } from './rollup.mjs';
 import { dirs, loadProfile } from './store.mjs';
 import { readRows } from './toonfile.mjs';
@@ -63,7 +63,7 @@ export function liveRuns(root, now = Date.now(), freshMs = 180000) {
     const lines = readFileSync(p, 'utf8').split('\n').filter(Boolean);
     let settled = false; let last = ''; let started = st.birthtimeMs;
     for (const l of lines) {
-      try { const ev = JSON.parse(l); if (ev.type === 'agent_settled') settled = true; const t = formatPiEvent(ev); if (t) last = t; if (ev.type === 'session' && ev.timestamp) started = Date.parse(ev.timestamp); } catch { /* cortada */ }
+      try { const ev = JSON.parse(l); if (isSettled(ev)) settled = true; const t = formatRunEvent(ev); if (t) last = t; if (ev.type === 'session' && ev.timestamp) started = Date.parse(ev.timestamp); } catch { /* cortada */ }
     }
     const running = !settled && now - st.mtimeMs < freshMs;
     out.push({ task: basename(f, '.jsonl'), running, last: last.replace(/^[^\p{L}\p{N}]+/u, '').slice(0, 120) || '(sin actividad)', started, updated: st.mtimeMs });
@@ -180,6 +180,6 @@ export function runLog(root, task) {
   const f = join(root, '.harness', 'logs', `${task}.jsonl`);
   if (!existsSync(f)) return [];
   const out = [];
-  for (const l of readFileSync(f, 'utf8').split('\n')) { try { const t = formatPiEvent(JSON.parse(l)); if (t) out.push(t); } catch { /* cortada */ } }
+  for (const l of readFileSync(f, 'utf8').split('\n')) { try { const t = formatRunEvent(JSON.parse(l)); if (t) out.push(t); } catch { /* cortada */ } }
   return out;
 }

@@ -155,8 +155,8 @@ export function collectCodex(root, metricsDir, { dir, windows = [], sinceMs = 0 
   };
 }
 
-export const piRunsAsSessions = (runs) => runs.filter((r) => r.provider === 'pi').map((r) => ({
-  session: r.session || `${r.task}-${r.ts}`, task: r.task, role: r.role || 'executor', provider: 'pi', model: r.model || 'pi', depth: 0, turns: Number(r.turns) || 0,
+export const piRunsAsSessions = (runs) => runs.filter((r) => r.provider === 'pi' || r.provider === 'opencode').map((r) => ({
+  session: r.session || `${r.task}-${r.ts}`, task: r.task, role: r.role || 'executor', provider: r.provider, model: r.model || r.provider, depth: 0, turns: Number(r.turns) || 0,
   in: Number(r.in) || 0, cached: Number(r.cached) || 0, out: Number(r.out) || 0, cost_est: Number(r.cost) || 0, wall_s: Math.round((Number(r.ms) || 0) / 1000),
   started: r.ts, q5h_start: '', q5h_end: '', qweek_start: '', qweek_end: '',
 }));
