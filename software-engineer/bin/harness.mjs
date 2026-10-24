@@ -10,6 +10,7 @@ import { changedFiles, checkScope, headSha, newCommits, runGate, snapshotDirty }
 import { judgeRun, parseVerdict } from '../src/verdict.mjs';
 import { MAIN_ROLES, ROLES, RUNNERS, checkProfile, detectEnvironment, globalConfigFile, listPiModels, rolePatch } from '../src/config.mjs';
 import { runWizard } from '../src/wizard.mjs';
+import { fleetStale, upgrade, versionInfo } from '../src/upgrade.mjs';
 import { fleetSnapshot } from '../src/fleet.mjs';
 import { renderFrame, runTui } from '../src/tui.mjs';
 import { resolvePi, runPi } from '../src/pi.mjs';
@@ -44,6 +45,7 @@ const out = (o) => console.log(JSON.stringify(o, null, 2));
 const fail = (m, code = 1) => { console.error(`error: ${m}`); process.exit(code); };
 const list = (v) => (v ? String(v).split(',').map((s) => s.trim()).filter(Boolean) : undefined);
 const [cmd, sub, ...rest] = pos;
+const CORE = resolve(dirname(fileURLToPath(import.meta.url)), '..'); // carpeta del harness-core (el clon desde el que se instaló)
 
 const need = (id) => {
   const t = loadBacklog(root).tasks[id];
@@ -420,6 +422,32 @@ try {
       } else fail('uso: metrics collect | report [tarea] | compare | show [tabla] [--n N]');
       break;
     }
+    case 'version': {
+      out(versionInfo(CORE));
+      break;
+    }
+    case 'upgrade': {
+      // upgrade [--check] [--sync]: trae los cambios del repo desde el que instalaste, reinstala y revisa los proyectos.
+      const r = upgrade(CORE, { check: !!flag.check });
+      if (r.updated) {
+        // Los proyectos se revisan con el código nuevo: otro proceso, no este.
+        const f = spawnSync(process.execPath, [join(CORE, 'bin', 'harness.mjs'), 'fleet', ...(flag.sync ? ['--sync'] : [])], { encoding: 'utf8' });
+        try { r.projects = JSON.parse(f.stdout); } catch { r.projects = { error: (f.stderr || f.stdout).trim().slice(0, 300) }; }
+        r.next = r.projects.outdated && !flag.sync ? 'harness upgrade --sync (o `harness agents sync` en cada proyecto)' : undefined;
+      }
+      out(r);
+      if (r.error) process.exitCode = 1;
+      break;
+    }
+    case 'fleet': {
+      // Proyectos con harness y qué tienen desactualizado; --sync refresca sus agentes con el código actual.
+      const sync = flag.sync ? (p) => {
+        const x = spawnSync(process.execPath, [join(CORE, 'bin', 'harness.mjs'), 'agents', 'sync', '--root', p], { encoding: 'utf8' });
+        return x.status === 0 ? 'ok' : `error: ${(x.stderr || x.stdout).trim().split('\n')[0]}`;
+      } : null;
+      out(fleetStale({ sync }));
+      break;
+    }
     case 'doctor': {
       const profile = loadProfile(root);
       const env = detectEnvironment(profile);
@@ -453,6 +481,9 @@ try {
   config                                     asistente: runner principal, runner y modelo por rol (global o proyecto)
   config show | get <clave> | set <clave> <valor> [--global] | role <rol> <runner> [modelo] [--global]
   metrics collect | report [tarea] | compare | show [tabla] métricas completas en TOON y un informe legible, sin gastar tokens
+  version                                    versión, commit y carpeta desde la que está instalado
+  upgrade [--check] [--sync]                 trae los cambios del repo (git pull --ff-only), reinstala y lista los proyectos desactualizados; --sync los refresca
+  fleet [--sync]                             proyectos con harness y sus agentes desactualizados
   doctor
   --root DIR (por defecto: directorio actual)`);
   }

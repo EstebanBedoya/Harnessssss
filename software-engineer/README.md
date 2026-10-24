@@ -68,6 +68,17 @@ pnpm run setup -- --uninstall   # quita solo los dos enlaces
 ```
 Crea `~/.claude/skills/harness` (comando `/harness` en Claude Code) y `~/.local/bin/harness` (comando `harness`). Es idempotente y no pisa enlaces ajenos. Asegúrate de que `~/.local/bin` esté en tu `PATH`.
 
+## Actualizar
+El CLI se instala desde un clon del repo, así que actualizar es traer los commits nuevos:
+```bash
+harness version                 # versión, commit y carpeta desde la que está instalado
+harness upgrade --check         # ¿hay algo nuevo? lista los commits; no cambia nada
+harness upgrade                 # git pull --ff-only + install.sh (dependencias y enlaces) + revisa tus proyectos
+harness upgrade --sync          # igual, y además refresca los agentes de los proyectos desactualizados
+harness fleet [--sync]          # solo la revisión de proyectos (agentes frente a las plantillas actuales)
+```
+`upgrade` se detiene sin tocar nada si el clon tiene cambios sin commitear o divergió del remoto. Los proyectos se buscan en `~/Projects`, `~/Lab` y `~/Servers` (cámbialo en `~/.harness/fleet.json`). Quien tenga una versión anterior a `upgrade` debe hacer `git pull` una vez en el clon.
+
 ## Guía de uso
 
 ### 1. Preparar un proyecto
@@ -161,6 +172,7 @@ src/router.mjs       modelo/esfuerzo por rol     src/gate.mjs     gate + scope m
 src/pi.mjs           pi (headless)               src/metrics.mjs  métricas TOON
 src/config.mjs       runners, familias, capas    src/wizard.mjs   asistente de config
 src/runners.mjs      lanzadores pi/codex/opencode/antigravity
+src/upgrade.mjs      version, upgrade, fleet
 src/init.mjs         detección del proyecto      src/defaults.mjs perfil y precios por defecto
 agents/*.md          prompts de cada rol         skill/SKILL.md   comando /harness
 test/                node --test
