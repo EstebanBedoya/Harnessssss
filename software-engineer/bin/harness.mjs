@@ -8,8 +8,10 @@ import { CATEGORIES } from '../src/defaults.mjs';
 import { classify } from '../src/classify.mjs';
 import { changedFiles, checkScope, headSha, newCommits, runGate, snapshotDirty } from '../src/gate.mjs';
 import { judgeRun, parseVerdict } from '../src/verdict.mjs';
-import { MAIN_ROLES, ROLES, RUNNERS, checkProfile, detectEnvironment, globalConfigFile, listPiModels, rolePatch } from '../src/config.mjs';
+import { MAIN_ROLES, ROLES, RUNNERS, checkProfile, detectEnvironment, formatSummary, globalConfigFile, listPiModels, rolePatch } from '../src/config.mjs';
 import { runWizard } from '../src/wizard.mjs';
+import { Cancelled, createUI } from '../src/prompt.mjs';
+import { checkAuth, formatAuth, runLogin } from '../src/auth.mjs';
 import { fleetStale, formatFleet, formatUpgrade, formatVersion, upgrade, versionInfo } from '../src/upgrade.mjs';
 import { fleetSnapshot } from '../src/fleet.mjs';
 import { renderFrame, runTui } from '../src/tui.mjs';
@@ -54,32 +56,44 @@ const need = (id) => {
   return t;
 };
 
-// Asistente de runners/modelos, compartido por `harness config` y `harness init --apply`. Devuelve lo guardado.
+// Asistente de runners/modelos con menús, compartido por `harness config` y `harness init --apply`. Devuelve lo guardado.
 async function configure({ offerInstall = false } = {}) {
   const profile = loadProfile(root);
   let env = detectEnvironment(profile);
   const interactive = !flag.yes && process.stdin.isTTY;
-  const rl = interactive ? (await import('node:readline/promises')).createInterface({ input: process.stdin, output: process.stdout }) : null;
+  const ui = interactive ? createUI() : null;
   try {
-    if (rl && offerInstall) {
+    if (ui && offerInstall) {
       for (const [what, cmdline] of Object.entries(env.install)) {
-        if ((await rl.question(`${what} no está instalado. ¿Instalarlo con \`${cmdline}\`? (s/N) [n]: `)).trim().toLowerCase().startsWith('s')) {
-          const r = spawnSync(cmdline, { shell: true, stdio: 'inherit' });
-          console.error(r.status === 0 ? `ok      ${what} instalado` : `error   no pude instalar ${what} (código ${r.status}); instálalo a mano y vuelve a correr \`harness config\``);
-        }
+        const yes = await ui.select({ message: `${what} no está instalado. ¿Lo instalo con \`${cmdline}\`?`, options: [{ value: false, label: 'No, lo haré yo' }, { value: true, label: 'Sí, instalar ahora' }] });
+        if (!yes) continue;
+        const r = spawnSync(cmdline, { shell: true, stdio: 'inherit' });
+        console.error(r.status === 0 ? `ok      ${what} instalado` : `error   no pude instalar ${what} (código ${r.status}); instálalo a mano y vuelve a correr \`harness config\``);
       }
       env = detectEnvironment(profile);
     }
     const r = await runWizard({
-      profile, env, listModels: (runner) => modelsFor(profile, runner), yes: !rl, main: flag.main || null,
-      ask: async (q, def) => (await rl.question(`${q}${def ? ` [${def}]` : ''}: `)) || def,
+      profile, env, listModels: (runner) => modelsFor(profile, runner), yes: !ui, ui,
+      auth: { check: (runner, model) => checkAuth(runner, { profile, model }), login: async (runner, model) => runLogin(runner, { profile, model }) },
       say: (m) => console.error(m),
     });
+    if (r.cancelled) return { saved: [], cancelled: true };
     let global = !!flag.global;
-    if (rl && Object.keys(r.patches).length) global = (await rl.question('¿Dónde guardo? (g = global, para todos tus proyectos; p = solo este proyecto) [p]: ')).trim().toLowerCase().startsWith('g');
+    if (ui && Object.keys(r.patches).length) {
+      ui.note(['', 'Cambios:', ...r.changes, ''].join('\n'));
+      const where = await ui.select({
+        message: 'Guardar los cambios en…',
+        options: [{ value: 'project', label: 'Este proyecto', hint: dirs(root).profile }, { value: 'global', label: 'Global', hint: `todos tus proyectos · ${globalConfigFile()}` }, { value: 'cancel', label: 'No guardar' }],
+      });
+      if (where === 'cancel') return { saved: [], cancelled: true };
+      global = where === 'global';
+    }
     for (const [k, v] of Object.entries(r.patches)) setProfileValue(root, k, v, { global });
-    return { saved: Object.keys(r.patches), scope: global ? 'global' : 'proyecto', interactive: !!rl, warnings: checkProfile(loadProfile(root), env) };
-  } finally { rl?.close(); }
+    return { saved: Object.keys(r.patches), scope: global ? 'global' : 'proyecto', interactive: !!ui, warnings: checkProfile(loadProfile(root), env) };
+  } catch (e) {
+    if (e instanceof Cancelled) return { saved: [], cancelled: true };
+    throw e;
+  }
 }
 
 try {
@@ -270,6 +284,8 @@ try {
       if (!bin) fail(`no encuentro ${rt.provider}: ${launcher.install}; no gasté ningún intento.`);
       const notReady = launcher.ready(bin, rt);
       if (notReady) fail(`${notReady}; no gasté ningún intento.`);
+      const au = checkAuth(rt.provider, { profile, model: rt.model, bin });
+      if (au.state === 'missing') fail(`no has iniciado sesión en ${rt.provider}${au.detail ? ` (${au.detail})` : ''}: corre \`harness login ${rt.provider}\` (${au.login?.hint}); no gasté ningún intento.`);
       if (rt.provider === 'pi' && rt.model && !listPiModels(bin).some((m) => m.model === rt.model)) fail(`pi no conoce el modelo ${rt.model} (¿falta /login de ese proveedor?). Mira \`pi --list-models\` o cámbialo con \`harness config\`; no gasté ningún intento.`);
       const replyRel = `.harness/replies/${t.id}${role === 'executor' ? '' : `.${role}`}.txt`;
       mkdirSync(join(root, '.harness', 'replies'), { recursive: true });
@@ -378,7 +394,7 @@ try {
         warnings: checkProfile(p, env),
         files: { global: globalConfigFile(), project: dirs(root).profile },
       });
-      if (sub === 'show') { out(summary(profile)); break; }
+      if (sub === 'show') { show(summary(profile), (x) => formatSummary(x, 'Configuración efectiva (capas: defecto < global < proyecto)')); break; }
       if (sub === 'get') { out(getProfileValue(profile, rest[0] || '') ?? null); break; }
       if (sub === 'role') {
         const [role, runner, model] = rest;
@@ -386,7 +402,7 @@ try {
         if (!ROLES.includes(role)) fail(`rol desconocido: ${role} (válidos: ${ROLES.join(', ')})`);
         if (!RUNNERS[runner]) fail(`runner desconocido: ${runner} (válidos: ${Object.keys(RUNNERS).join(', ')})`);
         const keys = applyPatches(rolePatch(role, { runner, model: model ?? null }));
-        out({ set: keys, scope: asGlobal ? 'global' : 'proyecto', ...summary(loadProfile(root)) });
+        show({ set: keys, scope: asGlobal ? 'global' : 'proyecto', ...summary(loadProfile(root)) }, (x) => formatSummary(x, `✓ ${role} → ${runner} · ${model ?? '(default del runner)'}   guardado en ${x.scope}`));
         break;
       }
       if (sub === 'set') {
@@ -394,12 +410,13 @@ try {
         let value = rest[1];
         try { value = JSON.parse(rest[1]); } catch { /* texto plano */ }
         setProfileValue(root, rest[0], value, { global: asGlobal });
-        out({ set: rest[0], value, scope: asGlobal ? 'global' : 'proyecto', note: rest[0].startsWith('models.') || rest[0] === 'main' ? 'el cambio aplica en el siguiente `harness next`' : undefined, warnings: checkProfile(loadProfile(root), env) });
+        show({ set: rest[0], value, scope: asGlobal ? 'global' : 'proyecto', ...summary(loadProfile(root)) }, (x) => formatSummary(x, `✓ ${rest[0]} = ${JSON.stringify(value)}   guardado en ${x.scope}`));
         break;
       }
       if (sub) fail('uso: config [show | get <clave> | set <clave> <valor> | role <rol> <runner> [modelo]] [--global]');
       if (!process.stdin.isTTY && !flag.yes) fail('el asistente necesita una terminal; usa `config role`, `config set` o `--yes`');
-      out({ ...(await configure({ offerInstall: true })), ...summary(loadProfile(root)) });
+      const done = await configure({ offerInstall: true });
+      show({ ...done, ...summary(loadProfile(root)) }, (x) => formatSummary(x, x.cancelled ? '✗ Cancelado: no se guardó nada' : x.saved.length ? `✓ ${x.saved.length} cambio(s) guardado(s) en ${x.scope}` : 'Sin cambios'));
       break;
     }
     case 'metrics': {
@@ -449,6 +466,25 @@ try {
       show(fleetStale({ sync }), formatFleet);
       break;
     }
+    case 'login': {
+      // login [runner]: sin argumentos, revisa los runners que usa tu config y ofrece iniciar sesión donde falte.
+      const profile = loadProfile(root);
+      const used = [...new Set(Object.values(profile.models).map((m) => m.provider))];
+      const target = sub || null;
+      if (target && !RUNNERS[target]) fail(`runner desconocido: ${target} (válidos: ${Object.keys(RUNNERS).join(', ')})`);
+      if (target) {
+        const model = Object.values(profile.models).find((m) => m.provider === target)?.model ?? null;
+        const r = runLogin(target, { profile, model });
+        console.log(r.ok ? `✓ sesión iniciada en ${target}${r.detail ? ` (${r.detail})` : ''}` : `✗ sigues sin sesión en ${target}${r.state === 'unknown' ? ' (no pude comprobarlo)' : ''}`);
+        if (!r.ok) process.exitCode = 1;
+        break;
+      }
+      const rows = used.map((runner) => checkAuth(runner, { profile, model: Object.values(profile.models).find((m) => m.provider === runner)?.model ?? null }));
+      show(rows, formatAuth);
+      const missing = rows.filter((r) => r.state === 'missing');
+      if (missing.length && process.stdin.isTTY && !flag.json) console.log(`\nIniciar sesión: ${missing.map((r) => `harness login ${r.runner}`).join('  ·  ')}`);
+      break;
+    }
     case 'doctor': {
       const profile = loadProfile(root);
       const env = detectEnvironment(profile);
@@ -458,6 +494,7 @@ try {
         profile: existsSync(dirs(root).profile),
         gate: profile.gate.cmd || null,
         config: { main: profile.main ?? null, global: globalConfigFile(), warnings: checkProfile(profile, env) },
+        auth: Object.fromEntries([...new Set(Object.values(profile.models).map((m) => m.provider))].map((r) => { const a = checkAuth(r, { profile, model: Object.values(profile.models).find((m) => m.provider === r)?.model ?? null }); return [r, a.state + (a.detail ? ` (${a.detail})` : '')]; })),
         install: env.install,
         note: 'pi: la suscripción se conecta con /login dentro de pi; `pi mcp list` muestra los MCP (engram, codebase-memory). Cambiar runners y modelos: `harness config`',
       });
@@ -485,6 +522,7 @@ try {
   version [--json]                           versión, commit y carpeta desde la que está instalado
   upgrade [--check] [--sync] [--json]        trae los cambios del repo (git pull --ff-only), reinstala y lista los proyectos desactualizados; --sync los refresca
   fleet [--sync] [--json]                    proyectos con harness y sus agentes desactualizados
+  login [runner]                             ¿hay sesión en cada runner que usa tu config? con un runner, inicia sesión (claude, pi, codex, opencode, antigravity)
   doctor
   --root DIR (por defecto: directorio actual)`);
   }

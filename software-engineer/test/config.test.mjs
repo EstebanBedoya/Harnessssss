@@ -12,6 +12,7 @@ import { addTask, applyEvent, nextStep } from '../src/tasks.mjs';
 import { loadBacklog, loadProfile, setProfileValue } from '../src/store.mjs';
 import { parseVerdict } from '../src/verdict.mjs';
 import { runWizard } from '../src/wizard.mjs';
+import { initSelect, physicalRows, reduceSelect, reduceText, renderSelect, visibleOptions } from '../src/prompt.mjs';
 
 const BIN = fileURLToPath(new URL('../bin/harness.mjs', import.meta.url));
 const tmp = () => mkdtempSync(join(tmpdir(), 'harness-cfg-'));
@@ -77,23 +78,81 @@ test('pi: parsea la tabla de modelos; el veredicto del reviewer solo vale con la
   assert.equal(parseVerdict('me parece bien'), null);
 });
 
-test('asistente: Enter conserva; runner y modelo por rol quedan como parches; avisa de la misma familia', async () => {
-  const profile = withModels({});
-  const env = { herdr: true, runners: { claude: true, pi: true, codex: true, opencode: false }, install: {} };
-  const answers = ['', 'n', '', '', 'pi', 'openai/gpt-5.3-codex', 'pi', 'openai/gpt-5.5']; // main, ¿más roles?, planner (runner, modelo), executor, reviewer
-  const asked = []; const said = [];
-  const r = await runWizard({
-    profile, env, piModels: [{ provider: 'openai', id: 'gpt-5.3-codex', model: 'openai/gpt-5.3-codex' }, { provider: 'openai', id: 'gpt-5.5', model: 'openai/gpt-5.5' }],
-    ask: async (q, def) => { asked.push(q); return answers.shift() || def; }, say: (m) => said.push(m),
-  });
+// UI guionizada: cada select/text consume la siguiente respuesta; comprueba que el valor exista entre las opciones.
+const scripted = (answers, log = []) => ({
+  select: async ({ message, options }) => {
+    const v = answers.shift();
+    log.push({ message, options });
+    assert.ok(options.some((o) => o.value === v && !o.disabled), `«${message}»: ${String(v)} no es una opción válida (${options.map((o) => o.value)})`);
+    return v;
+  },
+  text: async ({ message }) => { log.push({ message }); return answers.shift(); },
+});
+const ENV = { herdr: true, runners: { claude: true, pi: true, codex: true, opencode: false, antigravity: true }, install: {} };
+
+const piList = (runner) => (runner === 'pi' ? [{ provider: 'openai', id: 'gpt-5.3-codex', model: 'openai/gpt-5.3-codex' }, { provider: 'openai', id: 'gpt-5.5', model: 'openai/gpt-5.5' }] : []);
+const HIGH = { T0: 'high', T1: 'high', T2: 'high' };
+const menu = (log, message) => log.filter((l) => l.message === message).at(-1);
+
+test('asistente: lista de agentes con su info; al elegir uno se ve su config y se cambia campo por campo', async () => {
+  const said = []; const log = [];
+  const ui = scripted([
+    'executor', 'model', 'openai/gpt-5.3-codex', '__back',                  // executor: solo el modelo
+    'reviewer', 'runner', 'pi', 'openai/gpt-5.5', 'effort', 'high', '__back', // reviewer: runner (pide el modelo enseguida) y esfuerzo
+    '__save',
+  ], log);
+  const r = await runWizard({ profile: withModels({}), env: ENV, ui, say: (m) => said.push(m), listModels: piList });
   assert.deepEqual(r.patches, {
     'models.executor.provider': 'pi', 'models.executor.model': 'openai/gpt-5.3-codex',
-    'models.reviewer.provider': 'pi', 'models.reviewer.model': 'openai/gpt-5.5',
+    'models.reviewer.provider': 'pi', 'models.reviewer.model': 'openai/gpt-5.5', 'models.reviewer.effort': HIGH, // era medium/high/high
   });
-  assert.equal(r.patches.main, undefined);
-  assert.match(said.join('\n'), /misma familia/);
-  const yes = await runWizard({ profile, env, ask: async () => assert.fail('con --yes no se pregunta'), yes: true, main: 'pi' });
-  assert.deepEqual([yes.patches, yes.main], [{}, 'pi']);
+  const list = log[0].options.map((o) => o.label);
+  assert.match(list[0], /^planner\s+claude · claude-opus-5-5 · medium\/high\/high$/); // la info de cada agente está en la lista
+  assert.match(list[1], /^executor\s+pi · default del runner · medium\/high\/high$/);
+  assert.match(list[4], /^explore\s+claude · claude-haiku-5-5 · sin esfuerzo$/);
+  const detail = log.find((l) => l.message === 'planner' || l.message === 'executor').options.map((o) => o.label);
+  assert.deepEqual(detail.slice(0, 3), ['Runner     pi', 'Modelo     default del runner', 'Esfuerzo   T0 medium · T1 high · T2 high']);
+  assert.match(menu(log, 'reviewer  (cambiado)').options[0].label, /Runner     pi/); // al volver se ve lo ya cambiado
+  assert.match(said.join('\n'), /misma familia/); // gpt-5.3-codex y gpt-5.5: ambos openai
+  assert.deepEqual(r.changes.filter((c) => c.includes('reviewer') || c.includes('runner') || c.includes('modelo') || c.includes('esfuerzo')).slice(-4), ['  reviewer', '    runner     claude → pi', '    modelo     claude-sonnet-5-5 → openai/gpt-5.5', '    esfuerzo   T0 medium · T1 high · T2 high → high']);
+  assert.equal(log.find((l) => l.message === 'reviewer · runner').options.find((o) => o.value === 'opencode').disabled, true); // no instalado
+  assert.deepEqual((await runWizard({ profile: withModels({}), env: ENV, ui: null, yes: true })).patches, {});
+});
+
+test('asistente: salir sin cambios, salir con cambios pide confirmar, y descartar no deja parches', async () => {
+  const none = await runWizard({ profile: withModels({}), env: ENV, ui: scripted(['__save']) });
+  assert.deepEqual(none.patches, {});
+  assert.equal((await runWizard({ profile: withModels({}), env: ENV, ui: scripted(['__save']) })).cancelled, undefined); // «Salir» sin cambios no es cancelar
+  const log = [];
+  const quit = await runWizard({ profile: withModels({}), env: ENV, ui: scripted(['planner', 'effort', 'low', '__back', '__quit', false, '__quit', true], log) });
+  assert.deepEqual([quit.cancelled, quit.patches], [true, {}]);
+  assert.match(menu(log, 'Hay 1 cambio(s) sin guardar').options.map((o) => o.label).join('|'), /Volver a la lista\|Descartar y salir/);
+  assert.ok(log.some((l) => l.options?.some((o) => o.value === '__save' && /Guardar y salir \(1 cambio\)/.test(o.label)))); // el contador de cambios
+});
+
+test('asistente: esfuerzo igual en los tres tiers o por tier; no aplica a explore ni a opencode', async () => {
+  const one = await runWizard({ profile: withModels({}), env: ENV, ui: scripted(['executor', 'effort', 'xhigh', '__back', '__save']) });
+  assert.deepEqual(one.patches, { 'models.executor.effort': { T0: 'xhigh', T1: 'xhigh', T2: 'xhigh' } }); // pi · default ya era el valor de fábrica: solo cambia el esfuerzo
+  const tiers = await runWizard({ profile: withModels({}), env: ENV, ui: scripted(['executor', 'effort', '__per_tier', 'low', 'medium', 'xhigh', '__back', '__save']) });
+  assert.deepEqual(tiers.patches['models.executor.effort'], { T0: 'low', T1: 'medium', T2: 'xhigh' });
+  const log = [];
+  await runWizard({ profile: withModels({}), env: ENV, ui: scripted(['explore', '__back', '__save'], log) });
+  assert.equal(menu(log, 'explore').options.find((o) => o.value === 'effort').disabled, true); // Haiku no admite esfuerzo
+  const oc = [];
+  await runWizard({
+    profile: withModels({}), env: { ...ENV, runners: { ...ENV.runners, opencode: true } }, ui: scripted(['executor', 'runner', 'opencode', 'opencode/big-pickle', '__back', '__save'], oc),
+    listModels: (r) => (r === 'opencode' ? [{ model: 'opencode/big-pickle' }] : []),
+  });
+  assert.equal(menu(oc, 'executor  (cambiado)').options.find((o) => o.value === 'effort').disabled, true); // opencode no recibe el esfuerzo
+});
+
+test('asistente: un runner sin lista pide el modelo escrito, y «Escribir otro…» también', async () => {
+  const typed = await runWizard({ profile: withModels({}), env: ENV, ui: scripted(['planner', 'runner', 'antigravity', 'gemini-3.8-flash-high', '__back', '__save']) });
+  assert.deepEqual(typed.patches, { 'models.planner.provider': 'antigravity', 'models.planner.model': 'gemini-3.8-flash-high' });
+  const log = [];
+  const custom = await runWizard({ profile: withModels({}), env: ENV, ui: scripted(['executor', 'model', '__custom', 'gemini-9', '__back', '__save'], log), listModels: (r) => (r === 'pi' ? [{ model: 'openai/x' }] : []) });
+  assert.deepEqual(menu(log, 'executor · modelo (pi)').options.map((o) => o.value), ['__default', 'openai/x', '__custom']);
+  assert.equal(custom.patches['models.executor.model'], 'gemini-9');
 });
 
 test('CLI: config role --global escribe el global; show indica la capa; role valida el runner', () => {
@@ -104,11 +163,12 @@ test('CLI: config role --global escribe el global; show indica la capa; role val
   assert.equal(set.status, 0, set.stderr);
   assert.deepEqual(JSON.parse(readFileSync(g, 'utf8')).models.reviewer, { provider: 'pi', model: 'google/gemini-2.5-pro' });
   assert.equal(existsSync(join(root, '.harness/profile.json')), false); // el proyecto no se tocó
-  const show = JSON.parse(run('config', 'show').stdout);
+  const show = JSON.parse(run('config', 'show', '--json').stdout);
   assert.deepEqual([show.roles.reviewer.runner, show.roles.reviewer.model, show.roles.reviewer.from], ['pi', 'google/gemini-2.5-pro', 'global']);
   assert.equal(show.roles.planner.from, 'defecto');
   run('config', 'role', 'reviewer', 'claude', 'claude-sonnet-5-5'); // el proyecto sobrescribe
-  assert.equal(JSON.parse(run('config', 'show').stdout).roles.reviewer.from, 'proyecto');
+  assert.equal(JSON.parse(run('config', 'show', '--json').stdout).roles.reviewer.from, 'proyecto');
+  assert.match(run('config', 'show').stdout, /reviewer\s+claude · claude-sonnet-5-5 · T0 medium · T1 high · T2 high\s+\[proyecto\]/); // texto legible por defecto
   assert.notEqual(run('config', 'role', 'reviewer', 'nada').status, 0);
 });
 
@@ -329,20 +389,6 @@ test('modelos por runner: claude y codex sugieren los conocidos; un binario ause
   assert.deepEqual(modelsFor({ antigravity: { bin: '/no/existe' } }, 'antigravity'), []);
 });
 
-test('asistente: muestra los modelos del runner elegido y avisa si el modelo no está en la lista', async () => {
-  const profile = withModels({});
-  const env = { herdr: true, runners: { claude: true, pi: false, codex: false, opencode: false, antigravity: true }, install: {} };
-  const answers = ['', 'n', '', '', '', '', 'antigravity', 'gemini-9']; // main, ¿más roles?, planner (2), executor (2), reviewer: runner y modelo
-  const said = [];
-  const r = await runWizard({
-    profile, env, listModels: (runner) => (runner === 'antigravity' ? [{ model: 'gemini-3.8-flash-high' }, { model: 'claude-sonnet-4-6' }] : []),
-    ask: async (q, def) => answers.shift() || def, say: (m) => said.push(m),
-  });
-  assert.equal(r.patches['models.reviewer.provider'], 'antigravity');
-  assert.match(said.join('\n'), /modelos de antigravity: gemini-3\.8-flash-high, claude-sonnet-4-6/);
-  assert.match(said.join('\n'), /antigravity no lista "gemini-9"/);
-});
-
 test('exec: el reviewer corre en antigravity con Gemini y su VERDICT cierra la tarea', () => {
   const root = repo({ executor: { provider: 'codex', model: 'gpt-5.3-codex' }, reviewer: { provider: 'antigravity', model: 'gemini-3.8-flash-high' } });
   const P = loadProfile(root);
@@ -356,4 +402,60 @@ test('exec: el reviewer corre en antigravity con Gemini y su VERDICT cierra la t
   assert.equal(JSON.parse(r.stdout).verdict, 'approved');
   assert.equal(loadBacklog(root).tasks.a1.status, 'done');
   assert.match(readFileSync(join(root, 'agy.args'), 'utf8'), /^--print\n/);
+});
+
+// ---------- menús (reducer puro, sin terminal) ----------
+
+const K = (name, extra = {}) => ({ name, sequence: extra.sequence ?? '', ...extra });
+const OPTS = [{ value: 'a', label: 'alfa' }, { value: 'b', label: 'beta', disabled: true }, { value: 'c', label: 'gamma' }, { value: 'd', label: 'delta' }];
+
+test('menú: las flechas se saltan lo deshabilitado, Enter elige y Esc cancela', () => {
+  let st = initSelect({ options: OPTS });
+  assert.equal(st.cursor, 0);
+  st = reduceSelect(st, K('down')).state;
+  assert.equal(st.cursor, 2); // beta está deshabilitada
+  assert.deepEqual(reduceSelect(st, K('return')), { done: 'c' });
+  assert.equal(reduceSelect(initSelect({ options: OPTS }), K('up')).state.cursor, 0); // no sale por arriba
+  assert.deepEqual(reduceSelect(st, K('escape')), { cancel: true });
+  assert.deepEqual(reduceSelect(st, K('c', { ctrl: true })), { cancel: true });
+  assert.equal(initSelect({ options: OPTS, initial: 'd' }).cursor, 3); // initial por valor
+});
+
+test('menú: teclear filtra (solo si es filtrable), Backspace deshace y Esc limpia el filtro antes de cancelar', () => {
+  const many = Array.from({ length: 30 }, (_, i) => ({ value: `m${i}`, label: i % 2 ? `openai/gpt-${i}` : `google/gemini-${i}` }));
+  let st = initSelect({ options: many, filterable: true, pageSize: 5 });
+  for (const ch of 'gemini') st = reduceSelect(st, K(ch, { sequence: ch })).state;
+  assert.ok(visibleOptions(st).length === 15 && visibleOptions(st).every((o) => o.label.startsWith('google')));
+  assert.deepEqual(reduceSelect(st, K('return')), { done: 'm0' });
+  st = reduceSelect(st, K('backspace')).state;
+  assert.equal(st.filter, 'gemin');
+  st = reduceSelect(st, K('escape')).state;
+  assert.equal(st.filter, ''); // el primer Esc solo limpia el filtro
+  assert.deepEqual(reduceSelect(st, K('escape')), { cancel: true });
+  const plain = initSelect({ options: OPTS });
+  assert.equal(reduceSelect(plain, K('x', { sequence: 'x' })).state.filter, ''); // sin filtrable no filtra
+});
+
+test('menú: la ventana sigue al cursor y el render marca la opción actual', () => {
+  const many = Array.from({ length: 25 }, (_, i) => ({ value: i, label: `op${i}` }));
+  let st = initSelect({ options: many, pageSize: 5 });
+  for (let i = 0; i < 12; i++) st = reduceSelect(st, K('down')).state;
+  assert.equal(st.cursor, 12);
+  assert.ok(st.top <= 12 && 12 < st.top + 5);
+  const lines = renderSelect(st, 'Elige', { color: false });
+  assert.equal(lines[0], '? Elige');
+  assert.ok(lines.some((l) => l.startsWith('❯ op12')));
+  assert.match(lines.at(-1), /13\/25/);
+  assert.deepEqual(reduceText({ value: 'ab' }, K('backspace')), { state: { value: 'a' } });
+  assert.deepEqual(reduceText({ value: 'ab' }, K('return')), { done: 'ab' });
+});
+
+test('menú: las líneas largas cuentan por filas físicas, para que el redibujado no deje residuos', () => {
+  assert.equal(physicalRows(['corta', 'otra'], 80), 2);
+  assert.equal(physicalRows(['x'.repeat(100)], 80), 2); // se parte en dos filas
+  assert.equal(physicalRows(['x'.repeat(160)], 80), 2);
+  assert.equal(physicalRows(['x'.repeat(161)], 80), 3);
+  assert.equal(physicalRows([''], 80), 1); // una línea vacía ocupa una fila
+  assert.equal(physicalRows(['\x1b[36m' + 'x'.repeat(70) + '\x1b[0m'], 80), 1); // los colores no ocupan columnas
+  assert.equal(physicalRows(['x'.repeat(50)], 40), 2);
 });

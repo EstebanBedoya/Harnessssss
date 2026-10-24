@@ -111,12 +111,31 @@ Cada rol tiene un **runner** (`claude`, `pi`, `codex`, `opencode`, `antigravity`
 | reviewer | `pi` | `google/gemini-2.5-pro` |
 
 ```bash
-harness config                                          # asistente interactivo
+harness config                                          # asistente con menús (flechas, Enter, Esc)
 harness config show                                     # configuración efectiva y de qué capa sale cada valor
 harness config role executor pi openai/gpt-5.3-codex   # un rol, sin asistente
 harness config role reviewer pi google/gemini-2.5-pro --global
 harness config set main pi --global                     # runner principal: el de los roles sin asignar
 ```
+
+**El asistente** (`harness config`, y el paso de runners de `harness init --apply`) abre una **lista de agentes**; cada fila ya muestra su configuración (runner · modelo · esfuerzo):
+```
+? Agentes — elige uno para ver y cambiar su configuración
+❯ planner   claude · claude-opus-5-5 · medium/high/high
+  executor  pi · default del runner · medium/high/high
+  reviewer  antigravity · gemini-3.8-flash-high · medium/high/high  cambiado
+  …
+  ✔ Guardar y salir (1 cambio)
+```
+Al elegir un agente ves su configuración y cambias el campo que quieras: **Runner** (los no instalados salen deshabilitados; al cambiarlo te pide el modelo enseguida, porque el anterior ya no vale), **Modelo** (la lista del propio runner, con filtro al teclear; «Default del runner» o «Escribir otro…») y **Esfuerzo** (`low … max` en los tres tiers, o «Distinto por tier…»; no aplica a `opencode` ni a explore). Esc vuelve a la lista. Al salir ves lo que cambió (antes → después) y eliges dónde guardar: este proyecto, global o no guardar. `config show|role|set` imprimen un resumen legible; con `--json`, el objeto. El runner principal (`main`, para los roles que no asignes) se fija aparte: `harness config set main <runner>`.
+
+**Sesión en cada runner.** Si eliges un runner en el que no has iniciado sesión, el asistente lo detecta y te ofrece iniciarla ahí mismo («Iniciar sesión ahora» o «Seguir sin sesión»); la sesión se comprueba antes de pedir la lista de modelos, que sin sesión no se puede obtener. También:
+```bash
+harness login                    # ¿hay sesión en los runners que usa tu config? (✓ / ✗ / ?)
+harness login antigravity        # inicia sesión en ese runner y lo vuelve a comprobar
+harness doctor                   # incluye el estado de sesión de cada runner
+```
+Cómo se comprueba y se inicia en cada uno: `claude` (`claude auth status` / `claude auth login`), `codex` (`codex login status` / `codex login`), `opencode` (`opencode auth list` / `opencode auth login`; los modelos `opencode/*` son gratis y no piden login), `antigravity` (`agy models` falla con «Please sign in»; el login es abrir `agy` y entrar con tu cuenta de Google) y `pi` (`pi auth check --provider <proveedor>`; el login es `/login` dentro de pi, o exportar la API key del proveedor, p. ej. `GEMINI_API_KEY`). `harness exec` se niega a lanzar un runner sin sesión y no gasta un intento. Si no se puede saber (sin red, versión distinta), no bloquea.
 
 **Capas** (la última gana): valores de fábrica → global `~/.config/harness/config.json` → proyecto `.harness/profile.json`. `--global` escribe en el global; sin él, en el proyecto. `main` solo reasigna `planner`, `executor` y `reviewer` que nadie fijó; `designer` (Claude Design) y `explore` (Haiku) se quedan en Claude salvo que los asignes.
 

@@ -12,11 +12,11 @@ export const readJsonFile = (file) => { try { return existsSync(file) ? JSON.par
 
 // Runners que el harness conoce. `exec`: ¿`harness exec` sabe lanzarlo en headless? (claude no: corre como subagente que lanza el planner).
 export const RUNNERS = {
-  claude: { bin: 'claude', exec: false, note: 'subagente de Claude Code (lo lanza el planner)' },
-  pi: { bin: 'pi', exec: true, note: 'headless con `harness exec`; admite varios proveedores (/login en pi)', install: 'npm i -g --ignore-scripts @earendil-works/pi-coding-agent' },
-  codex: { bin: 'codex', exec: true, note: '`codex exec` headless con `harness exec`', install: 'instala Codex CLI' },
-  antigravity: { bin: 'agy', exec: true, note: '`agy --print` headless con `harness exec` (Gemini, Claude y GPT-OSS con tu cuenta Google)', install: 'brew install --cask antigravity-cli' },
-  opencode: { bin: 'opencode', exec: true, note: '`opencode run` headless con `harness exec`', install: 'instala opencode' },
+  claude: { bin: 'claude', exec: false, note: 'subagente de Claude Code' },
+  pi: { bin: 'pi', exec: true, note: 'multi-proveedor (/login en pi)', install: 'npm i -g --ignore-scripts @earendil-works/pi-coding-agent' },
+  codex: { bin: 'codex', exec: true, note: 'codex exec', install: 'instala Codex CLI' },
+  antigravity: { bin: 'agy', exec: true, note: 'agy · Gemini, Claude y GPT-OSS con tu cuenta Google', install: 'brew install --cask antigravity-cli' },
+  opencode: { bin: 'opencode', exec: true, note: 'opencode run', install: 'instala opencode' },
 };
 export const ROLES = ['planner', 'executor', 'reviewer', 'designer', 'explore'];
 // `main` solo reasigna estos: el designer (Claude Design + Chrome) y explore (Haiku) se quedan donde están salvo que se pida.
@@ -104,4 +104,14 @@ export function parsePiModels(text) {
 export function listPiModels(bin) {
   const r = spawnSync(bin, ['--list-models'], { encoding: 'utf8', timeout: 15000, env: { ...process.env, PATH: `${dirname(bin)}:${process.env.PATH || ''}` } });
   return r.status === 0 ? parsePiModels(r.stdout) : [];
+}
+
+// Resumen legible de la configuración efectiva (una línea por rol, con la capa de la que sale cada valor).
+export function formatSummary(sum, head) {
+  const eff = (e) => (!e ? 'sin esfuerzo' : new Set(Object.values(e)).size === 1 ? Object.values(e)[0] : `T0 ${e.T0} · T1 ${e.T1} · T2 ${e.T2}`);
+  const L = [head, '', ...(sum.main ? [`  runner principal: ${sum.main} (para los roles sin asignar)`] : [])];
+  for (const [role, r] of Object.entries(sum.roles)) L.push(`  ${role.padEnd(9)} ${r.runner} · ${r.model ?? 'default del runner'} · ${eff(r.effort)}   [${r.from}]`);
+  if (sum.warnings?.length) L.push('', ...sum.warnings.map((w) => `  aviso: ${w}`));
+  L.push('', `  global:   ${sum.files.global}`, `  proyecto: ${sum.files.project}`);
+  return L.join('\n');
 }
